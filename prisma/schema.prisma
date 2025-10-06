@@ -28,7 +28,7 @@ enum AssessmentModel {
 }
 
 model User {
-  id          String       @id // use o sub do Kinde
+  id          String       @id @default(uuid())
   email       String       @unique
   name        String?
   image       String?
