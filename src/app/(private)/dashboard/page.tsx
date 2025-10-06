@@ -30,4 +30,5 @@ export default async function DashboardPage() {
       : "/onboarding/company";
 
   if (!membership) redirect(redirectUrl);
+  return <div>Dashboard</div>;
 }
