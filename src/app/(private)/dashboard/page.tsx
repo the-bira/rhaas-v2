@@ -15,8 +15,8 @@ export default async function DashboardPage() {
   });
 
   const redirectUrl =
-    membership?.tenant.onboardingStep === "jobs"
-      ? "/jobs"
+    membership?.tenant.onboardingStep === "users"
+      ? "/users"
       : "/onboarding/company";
 
   if (!membership) redirect(redirectUrl);

@@ -41,7 +41,7 @@ export async function createCompanyAction(userId: string, formData: FormData) {
       about,
       logoUrl,
       website,
-      onboardingStep: "jobs",
+      onboardingStep: "users",
       onboardedAt: new Date(),
     },
   });
