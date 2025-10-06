@@ -22,6 +22,7 @@ import {
 import { Separator } from "@radix-ui/react-separator";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Button } from '../ui/button';
+import { Input } from "../ui/input";
 
 const TenantWithUserPhoneNumberSchema = z.object({
   phoneNumber: z.string().min(10).max(11),
@@ -29,9 +30,9 @@ const TenantWithUserPhoneNumberSchema = z.object({
     name: z.string().min(1),
     about: z.string().optional(),
     logoType: z.enum(["upload", "url"]),
-    logoUrl: z.string().url().optional(),
+    logoUrl: z.string().optional().or(z.literal("")),
     logoFile: z.instanceof(File).optional(),
-    website: z.string().url().optional(),
+    website: z.string().optional().or(z.literal("")),
   }),
 });
 
@@ -60,7 +61,7 @@ export default function CompanyForm() {
   }
 
   return (
-    <Card>
+    <Card className="w-full max-w-3xl">
       <CardHeader>
         <CardTitle>Informações da empresa</CardTitle>
         <CardDescription>
@@ -77,8 +78,9 @@ export default function CompanyForm() {
               type="text"
               maskType="phone"
               placeholder="(00) 00000-0000"
+              description="Número de telefone do usuário para contato"
             />
-            <Separator />
+
             <FormField
               control={form.control}
               name="tenant.name"
@@ -89,37 +91,54 @@ export default function CompanyForm() {
               control={form.control}
               name="tenant.about"
               label="Sobre a empresa"
-              type="text"
+              type="textarea"
             />
             <FormFieldUI
               control={form.control}
               name="tenant.logoType"
               render={({ field }) => (
-                <FormControl>
-                  <RadioGroup>
-                    <FormItem>
-                      <FormControl>
-                        <RadioGroupItem value="upload" />
-                      </FormControl>
-                      <FormLabel>Upload</FormLabel>
-                    </FormItem>
-                    <FormItem>
-                      <FormControl>
-                        <RadioGroupItem value="url" />
-                        <FormLabel>URL</FormLabel>
-                      </FormControl>
-                    </FormItem>
-                  </RadioGroup>
-                </FormControl>
+                <FormItem>
+                  <FormLabel>Tipo de Logo</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange} // ✅ importante
+                      value={field.value} // ✅ importante
+                      className="flex flex-row gap-4"
+                    >
+                      <FormItem className="flex items-center space-x-2">
+                        <RadioGroupItem value="upload" id="upload" />
+                        <FormLabel htmlFor="upload">Upload</FormLabel>
+                      </FormItem>
+
+                      <FormItem className="flex items-center space-x-2">
+                        <RadioGroupItem value="url" id="url" />
+                        <FormLabel htmlFor="url">URL</FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                </FormItem>
               )}
             />
 
             {logoType === "upload" ? (
-              <FormField
+              <FormFieldUI
                 control={form.control}
                 name="tenant.logoFile"
-                label="Logo da empresa"
-                type="file"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Logo da empresa</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          field.onChange(file);
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
               />
             ) : (
               <FormField

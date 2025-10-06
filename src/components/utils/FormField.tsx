@@ -2,15 +2,19 @@
 
 import {
   FormControl,
+  FormDescription,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea"; // ✅ Import do componente textarea
 import { Control, Controller, FieldValues, Path } from "react-hook-form";
 import { useCallback } from "react";
 
-// Máscaras
+// ==========================
+// 🔢 Máscaras
+// ==========================
 const applyMask = (value: string, maskType?: string): string => {
   const digits = value.replace(/\D/g, "");
 
@@ -46,20 +50,26 @@ const applyMask = (value: string, maskType?: string): string => {
   }
 };
 
-// Regex de validação
+// ==========================
+// ✅ Regex Validators (caso queira validar com Zod também)
+// ==========================
 export const regexValidators = {
   cpf: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
   cnpj: /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/,
   phone: /^\(\d{2}\) \d{4,5}-\d{4}$/,
 };
 
+// ==========================
+// ⚙️ Componente genérico de campo
+// ==========================
 interface FormFieldProps<T extends FieldValues> {
   control: Control<T>;
   name: Path<T>;
   label: string;
   placeholder?: string;
-  type?: "text" | "email" | "password" | "file";
+  type?: "text" | "email" | "password" | "file" | "textarea";
   maskType?: "cpf" | "cnpj" | "phone";
+  description?: string;
 }
 
 const FormField = <T extends FieldValues>({
@@ -69,10 +79,11 @@ const FormField = <T extends FieldValues>({
   type = "text",
   placeholder,
   maskType,
+  description,
 }: FormFieldProps<T>) => {
   const handleChange = useCallback(
     (onChange: (value: string) => void) =>
-      (e: React.ChangeEvent<HTMLInputElement>) => {
+      (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const masked = applyMask(e.target.value, maskType);
         e.target.value = masked;
         onChange(masked);
@@ -88,13 +99,23 @@ const FormField = <T extends FieldValues>({
         <FormItem>
           <FormLabel>{label}</FormLabel>
           <FormControl>
-            <Input
-              {...field}
-              type={type}
-              placeholder={placeholder}
-              onChange={handleChange(field.onChange)}
-            />
+            {type === "textarea" ? (
+              <Textarea
+                {...field}
+                placeholder={placeholder}
+                onChange={handleChange(field.onChange)}
+                rows={4}
+              />
+            ) : (
+              <Input
+                {...field}
+                type={type}
+                placeholder={placeholder}
+                onChange={handleChange(field.onChange)}
+              />
+            )}
           </FormControl>
+          {description && <FormDescription>{description}</FormDescription>}
           <FormMessage />
         </FormItem>
       )}

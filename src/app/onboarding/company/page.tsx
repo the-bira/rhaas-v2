@@ -1,6 +1,7 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { db } from "@/db";
 import { redirect } from "next/navigation";
+import CompanyForm from "@/components/onboarding/CompanyForm";
 
 export default async function CompanyOnboardingPage() {
   const { getUser } = getKindeServerSession();
@@ -19,5 +20,5 @@ export default async function CompanyOnboardingPage() {
     redirect("/dashboard");
   }
 
-  return <div>Company Onboarding</div>;
+  return <CompanyForm />;
 }
