@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  RECRUITER
+  INTERVIEWER
+  VIEWER
+}
+
+enum InterviewKind {
+  BEHAVIORAL
+  TECH
+}
+
+enum AssessmentModel {
+  DISC
+  BIGFIVE
+  MBTI
+  CUSTOM
+}
+
+model User {
+  id          String       @id // use o sub do Kinde
+  email       String       @unique
+  name        String?
+  image       String?
+  kindeId     String?      @unique
+  phoneNumber String?
+  tenantId    String?
+  tenant      Tenant?      @relation(fields: [tenantId], references: [id])
+  memberships Membership[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Tenant {
+  id             String       @id @default(uuid())
+  name           String
+  slug           String?      @unique
+  website        String?
+  about          String?
+  logoUrl        String?
+  onboardedAt    DateTime?
+  onboardingStep String?
+  users          User[]
+  memberships    Membership[]
+  jobs           Job[]
+  candidates     Candidate[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  Interview        Interview[]
+  AssessmentResult AssessmentResult[]
+  FinalScore       FinalScore[]
+  Invites          Invite[]
+}
+
+model Membership {
+  id       String   @id @default(uuid())
+  userId   String
+  tenantId String
+  role     Role
+  scopes   String[] @default([])
+
+  user   User   @relation(fields: [userId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([userId, tenantId])
+}
+
+model Invite {
+  id         String    @id @default(cuid())
+  email      String
+  role       Role
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  token      String?   @unique
+  expiresAt  DateTime?
+  acceptedAt DateTime?
+}
+
+model Job {
+  id          String       @id @default(uuid())
+  tenantId    String
+  title       String
+  description String
+  seniority   String?
+  tags        String[]
+  embedding   Bytes? // ou Unsupported("vector") se você habilitar pgvector
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  interviews  Interview[]
+  createdAt   DateTime     @default(now())
+  FinalScore  FinalScore[]
+}
+
+model Candidate {
+  id               String             @id @default(uuid())
+  tenantId         String
+  name             String?
+  email            String?
+  linkedinUrl      String?
+  resumeUrl        String?
+  resumeJson       Json?
+  embedding        Bytes?
+  status           String             @default("applied")
+  tenant           Tenant             @relation(fields: [tenantId], references: [id])
+  interviews       Interview[]
+  createdAt        DateTime           @default(now())
+  AssessmentResult AssessmentResult[]
+  FinalScore       FinalScore[]
+}
+
+model Interview {
+  id            String        @id @default(uuid())
+  tenantId      String
+  jobId         String
+  candidateId   String
+  kind          InterviewKind
+  status        String        @default("submitted")
+  vapiSessionId String?
+  transcriptUrl String?
+  paralingJson  Json?
+  nlpScoresJson Json?
+  stageScore    Float?
+  reportUrl     String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
+  job           Job           @relation(fields: [jobId], references: [id])
+  candidate     Candidate     @relation(fields: [candidateId], references: [id])
+}
+
+model AssessmentResult {
+  id          String          @id @default(uuid())
+  tenantId    String
+  candidateId String
+  model       AssessmentModel
+  rawJson     Json
+  normalized  Json
+  fitScore    Float?
+  createdAt   DateTime        @default(now())
+  tenant      Tenant          @relation(fields: [tenantId], references: [id])
+  candidate   Candidate       @relation(fields: [candidateId], references: [id])
+}
+
+model FinalScore {
+  id             String    @id @default(uuid())
+  tenantId       String
+  jobId          String
+  candidateId    String
+  resumeScore    Float?
+  discScore      Float?
+  interviewScore Float?
+  techScore      Float?
+  overall        Float?
+  detailsJson    Json?
+  rubricVersion  String?
+  createdAt      DateTime  @default(now())
+  tenant         Tenant    @relation(fields: [tenantId], references: [id])
+  job            Job       @relation(fields: [jobId], references: [id])
+  candidate      Candidate @relation(fields: [candidateId], references: [id])
+}
+
+model Blacklist {
+  id          String   @id @default(uuid())
+  tenantId    String
+  candidateId String
+  reason      String?
+  createdAt   DateTime @default(now())
+}
+
+model TalentPool {
+  id          String   @id @default(uuid())
+  tenantId    String
+  candidateId String
+  notes       String?
+  tags        String[]
+  createdAt   DateTime @default(now())
+}
