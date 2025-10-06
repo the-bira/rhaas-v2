@@ -1,30 +1,33 @@
 import { db } from "@/db";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { getUserFromKinde } from "@/lib/getUserFromKinde";
+import { redirect } from "next/navigation";
 
-export async function getUserFromKinde() {
+export default async function DashboardPage() {
+  let user = null;
+
   try {
-    const { getUser } = getKindeServerSession();
-    const user = await getUser();
-
-    if (!user) return null; // 👈 evita crash na build
-
-    const existing = await db.user.findUnique({
-      where: {
-        kindeId: user.id,
-      },
-    });
-
-    if (existing) return existing;
-
-    return db.user.create({
-      data: {
-        kindeId: user.id,
-        email: user.email!,
-        name: `${user.given_name ?? ""} ${user.family_name ?? ""}`.trim(),
-      },
-    });
-  } catch (err) {
-    console.warn("⚠️ getUserFromKinde() failed:", err);
-    return null;
+    user = await getUserFromKinde();
+  } catch (error) {
+    console.error(error);
   }
+
+  if (!user) {
+    redirect("/sign-in");
+  }
+
+  const membership = await db.membership.findFirst({
+    where: {
+      userId: user.id,
+    },
+    include: {
+      tenant: true,
+    },
+  });
+
+  const redirectUrl =
+    membership?.tenant.onboardingStep === "users"
+      ? "/users"
+      : "/onboarding/company";
+
+  if (!membership) redirect(redirectUrl);
 }
