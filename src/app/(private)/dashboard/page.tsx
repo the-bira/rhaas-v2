@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 export default async function DashboardPage() {
   const user = await getUserFromKinde();
 
+  if (!user) {
+    redirect("/sign-in");
+  }
+
   const membership = await db.membership.findFirst({
     where: {
       userId: user.id,
