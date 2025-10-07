@@ -46,7 +46,7 @@ export function AppSidebar({ tenant }: { tenant: Tenant }) {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton asChild>
                 <Link href={item.href}>
-                  <span className="text-white flex items-center gap-2">
+                  <span className=" flex items-center gap-2">
                     {item.icon}
                     {item.title}
                   </span>

@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/utils/AppSidebar";
 import { db } from "@/db";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 export default async function PrivateLayout({
   children,
@@ -11,6 +12,9 @@ export default async function PrivateLayout({
 }) {
   const headersList = await headers();
   const tenantId = headersList.get("x-tenant-id");
+  if (!tenantId) {
+    return redirect("/sign-in");
+  }
   const tenant = await db.tenant.findUnique({ where: { id: tenantId } });
   return (
     <SidebarProvider>
