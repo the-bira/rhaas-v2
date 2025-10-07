@@ -19,7 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import { Separator } from "@radix-ui/react-separator";
+import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Button } from '../ui/button';
 import { Input } from "../ui/input";

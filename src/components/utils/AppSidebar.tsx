@@ -20,6 +20,8 @@ import {
   UsersIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { CompanySwitcher } from "./CompanySwitcher";
+import { Tenant } from "@/generated/prisma";
 
 const items = [
   { title: "Dashboard", href: "/", icon: <HomeIcon /> },
@@ -31,10 +33,12 @@ const items = [
   { title: "Reports", href: "/reports", icon: <ChartBarIcon /> },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ tenant }: { tenant: Tenant }) {
   return (
     <Sidebar>
-      <SidebarHeader />
+      <SidebarHeader>
+        <CompanySwitcher tenant={tenant} />
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup />
         <SidebarMenu className="mt-4 flex flex-col gap-2 justify-center">

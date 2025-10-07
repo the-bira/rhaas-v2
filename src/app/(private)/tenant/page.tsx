@@ -1,9 +1,8 @@
-export const runtime = "nodejs";
+import TenantTabs from '@/components/tenant/Tabs';
+import { db } from '@/db';
+import { headers } from 'next/headers';
 
-import { db } from "@/db";
-import { headers } from "next/headers";
-
-export async function GET() {
+const fetchTenant = async () => {
   try {
     const headersList = await headers();
     const tenantId = headersList.get("x-tenant-id");
@@ -35,4 +34,15 @@ export async function GET() {
       headers: { "Content-Type": "application/json" },
     });
   }
+}
+
+export default async function TenantPage() {
+  const tenant = await fetchTenant();
+  const tenantData = await tenant.json();
+
+  return (
+    <>
+      <TenantTabs tenant={tenantData} />      
+    </>
+  );
 }

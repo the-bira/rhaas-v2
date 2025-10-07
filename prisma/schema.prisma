@@ -27,6 +27,36 @@ enum AssessmentModel {
   CUSTOM
 }
 
+enum Industry {
+  TECH
+  EDUCATION
+  FINANCE
+  JURIDICAL
+  LOGISTICS
+  MANUFACTURING
+  MEDIA
+  REAL_ESTATE
+  RETAIL
+  HEALTH
+  TOURISM
+  CONSTRUCTION
+  GOVERNMENT
+  ENERGY
+  NGO
+  RESEARCH
+  OTHER
+}
+
+enum ContractType {
+  OTHER
+}
+
+enum WorkModel {
+  REMOTE
+  HYBRID
+  PRESENTIAL
+}
+
 model User {
   id          String       @id @default(uuid())
   email       String       @unique
@@ -41,21 +71,43 @@ model User {
   updatedAt   DateTime     @updatedAt
 }
 
+model Contact {
+  id String @id @default(uuid())
+  tenantId String
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  name String
+  email String
+  phone String
+  createdAt DateTime @default(now())
+}
+
+model Address {
+  id String @id @default(uuid())
+  tenantId String
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  street String
+  number String
+}
+
 model Tenant {
-  id             String       @id @default(uuid())
-  name           String
-  slug           String?      @unique
-  website        String?
-  about          String?
-  logoUrl        String?
-  onboardedAt    DateTime?
-  onboardingStep String?
-  users          User[]
-  memberships    Membership[]
-  jobs           Job[]
-  candidates     Candidate[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id              String       @id @default(uuid())
+  name            String
+  slug            String?      @unique
+  website         String?
+  industry        Industry?
+  about           String?
+  longDescription String?
+  logoUrl         String?
+  onboardedAt     DateTime?
+  onboardingStep  String?
+  users           User[]
+  memberships     Membership[]
+  jobs            Job[]
+  candidates      Candidate[]
+  contacts        Contact[]
+  addresses       Address[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   Interview        Interview[]
   AssessmentResult AssessmentResult[]
@@ -96,15 +148,12 @@ model Job {
   requirements     String? // markdown
   responsibilities String? // markdown
   benefits         String? // markdown ou JSON
-  seniority        String?
   workModel        String? // "Remoto" | "Híbrido" | "Presencial"
   location         String? // "São Paulo, SP, Brasil"
   country          String? // "Brasil"
   city             String?
-  department       String? // "Engenharia", "Design", etc.
-  industry         String? // "Tecnologia", "Educação", etc.
-  contractType     String?      // "CLT", "PJ", "Freelancer", etc.
-  workSchedule     String?      // "Integral", "Parcial", "Turno", etc.
+  contractType     String? // "CLT", "PJ", "Freelancer", etc.
+  workSchedule     String? // "Integral", "Parcial", "Turno", etc.
   salaryRangeMin   Float?
   salaryRangeMax   Float?
   salaryCurrency   String?      @default("BRL")
@@ -113,11 +162,11 @@ model Job {
   embedding        Bytes? // ou Unsupported("vector") se você habilitar pgvector
   tenant           Tenant       @relation(fields: [tenantId], references: [id])
   interviews       Interview[]
-  publishedAt      DateTime?    // data de publicação
+  publishedAt      DateTime? // data de publicação
   expirationDate   DateTime?
   isActive         Boolean      @default(true)
   applicationUrl   String?
-  metadataJson     Json?        // guarda JSON cru da importação externa
+  metadataJson     Json? // guarda JSON cru da importação externa
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
   FinalScore       FinalScore[]
