@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea"; // ✅ Import do componente textarea
 import { Control, Controller, FieldValues, Path } from "react-hook-form";
-import { useCallback } from "react";
+import { useCallback, useId } from "react";
 
 // ==========================
 // 🔢 Máscaras
@@ -81,6 +81,8 @@ const FormField = <T extends FieldValues>({
   maskType,
   description,
 }: FormFieldProps<T>) => {
+  const stableId = useId() + "-" + name.replace(/\./g, "-");
+
   const handleChange = useCallback(
     (onChange: (value: string) => void) =>
       (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -97,10 +99,11 @@ const FormField = <T extends FieldValues>({
       name={name}
       render={({ field }) => (
         <FormItem>
-          <FormLabel>{label}</FormLabel>
+          <FormLabel htmlFor={stableId}>{label}</FormLabel>
           <FormControl>
             {type === "textarea" ? (
               <Textarea
+                id={stableId}
                 {...field}
                 placeholder={placeholder}
                 onChange={handleChange(field.onChange)}
@@ -109,6 +112,7 @@ const FormField = <T extends FieldValues>({
             ) : (
               <Input
                 {...field}
+                id={stableId}
                 type={type}
                 placeholder={placeholder}
                 onChange={handleChange(field.onChange)}

@@ -3,8 +3,15 @@
 import { db } from '@/db';
 import { getUserFromKinde } from '@/lib/getUserFromKinde';
 import { vercelBlobUpload } from "@/lib/vercelBlobUpload";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
-export async function createCompanyAction(userId: string, formData: FormData) {
+export async function createCompanyAction(formData: FormData) {
+  const userKinde = await getUserFromKinde();
+  if (!userKinde) {
+    throw new Error("User not found");
+  }
+
   const name = formData.get("tenant.name") as string;
   const about = (formData.get("tenant.about") as string | null) ?? "";
   const website = (formData.get("tenant.website") as string | null) ?? "";
@@ -20,7 +27,7 @@ export async function createCompanyAction(userId: string, formData: FormData) {
 
   const user = await db.user.findUnique({
     where: {
-      id: userId,
+      id: userKinde.id,
     },
   });
 
@@ -31,7 +38,7 @@ export async function createCompanyAction(userId: string, formData: FormData) {
   user.phoneNumber = phoneNumber;
   await db.user.update({
     where: {
-      id: userId,
+      id: user.id,
     },
     data: {
       phoneNumber,
@@ -48,4 +55,15 @@ export async function createCompanyAction(userId: string, formData: FormData) {
       onboardedAt: new Date(),
     },
   });
+
+  await db.membership.create({
+    data: {
+      userId: user.id,
+      tenantId: tenant.id,
+      role: "OWNER",
+    },
+  });
+
+  revalidatePath("/dashboard");
+  return { success: true, redirectUrl: "/dashboard" };
 }

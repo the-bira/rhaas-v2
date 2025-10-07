@@ -88,17 +88,39 @@ model Invite {
 }
 
 model Job {
-  id          String       @id @default(uuid())
-  tenantId    String
-  title       String
-  description String
-  seniority   String?
-  tags        String[]
-  embedding   Bytes? // ou Unsupported("vector") se você habilitar pgvector
-  tenant      Tenant       @relation(fields: [tenantId], references: [id])
-  interviews  Interview[]
-  createdAt   DateTime     @default(now())
-  FinalScore  FinalScore[]
+  id               String       @id @default(uuid())
+  tenantId         String
+  title            String
+  subtitle         String? // opcional: "Full Stack Developer | Remote | R$10–15K"
+  description      String // markdown ou rich text
+  requirements     String? // markdown
+  responsibilities String? // markdown
+  benefits         String? // markdown ou JSON
+  seniority        String?
+  workModel        String? // "Remoto" | "Híbrido" | "Presencial"
+  location         String? // "São Paulo, SP, Brasil"
+  country          String? // "Brasil"
+  city             String?
+  department       String? // "Engenharia", "Design", etc.
+  industry         String? // "Tecnologia", "Educação", etc.
+  contractType     String?      // "CLT", "PJ", "Freelancer", etc.
+  workSchedule     String?      // "Integral", "Parcial", "Turno", etc.
+  salaryRangeMin   Float?
+  salaryRangeMax   Float?
+  salaryCurrency   String?      @default("BRL")
+  tags             String[]
+  skills           String[]     @default([])
+  embedding        Bytes? // ou Unsupported("vector") se você habilitar pgvector
+  tenant           Tenant       @relation(fields: [tenantId], references: [id])
+  interviews       Interview[]
+  publishedAt      DateTime?    // data de publicação
+  expirationDate   DateTime?
+  isActive         Boolean      @default(true)
+  applicationUrl   String?
+  metadataJson     Json?        // guarda JSON cru da importação externa
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  FinalScore       FinalScore[]
 }
 
 model Candidate {

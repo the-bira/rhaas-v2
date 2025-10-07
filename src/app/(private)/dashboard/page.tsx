@@ -24,11 +24,15 @@ export default async function DashboardPage() {
     },
   });
 
+  console.log(membership?.tenant.onboardingStep);
+
   const redirectUrl =
     membership?.tenant.onboardingStep === "users"
-      ? "/users"
-      : "/onboarding/company";
+      ? "/onboarding/users"
+      : membership?.tenant.onboardingStep !== "done"
+      ? "/onboarding/users"
+      : null;
 
-  if (!membership) redirect(redirectUrl);
+  if (redirectUrl) redirect(redirectUrl);
   return <div>Dashboard</div>;
 }

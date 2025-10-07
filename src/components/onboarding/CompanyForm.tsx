@@ -23,6 +23,9 @@ import { Separator } from "@radix-ui/react-separator";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Button } from '../ui/button';
 import { Input } from "../ui/input";
+import { createCompanyAction } from "@/actions/onboarding/createCompanyAction";
+import { toast } from "sonner";
+import { useTransition } from "react";
 
 const TenantWithUserPhoneNumberSchema = z.object({
   phoneNumber: z.string().min(10).max(11),
@@ -37,6 +40,8 @@ const TenantWithUserPhoneNumberSchema = z.object({
 });
 
 export default function CompanyForm() {
+  const [isPending, startTransition] = useTransition();
+
   const form = useForm<z.infer<typeof TenantWithUserPhoneNumberSchema>>({
     resolver: zodResolver(TenantWithUserPhoneNumberSchema),
     defaultValues: {
@@ -54,12 +59,6 @@ export default function CompanyForm() {
 
   const logoType = form.watch("tenant.logoType");
 
-  async function onSubmit(
-    values: z.infer<typeof TenantWithUserPhoneNumberSchema>
-  ) {
-    console.log(values);
-  }
-
   return (
     <Card className="w-full max-w-3xl">
       <CardHeader>
@@ -70,7 +69,22 @@ export default function CompanyForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <form
+            action={async (formData) => {
+              // o Next chamará `createCompanyAction` no servidor
+              startTransition(async () => {
+                try {
+                  const response = await createCompanyAction(formData);
+                  toast.success("Empresa criada!");
+                  window.location.href = response.redirectUrl;
+                } catch (err) {
+                  console.error(err);
+                  toast.error("Erro ao criar empresa");
+                }
+              });
+            }}
+            className="space-y-8"
+          >
             <FormField
               control={form.control}
               name="phoneNumber"
@@ -155,7 +169,9 @@ export default function CompanyForm() {
               type="text"
             />
             <Separator />
-            <Button type="submit">Continuar</Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Criando..." : "Continuar"}
+            </Button>
           </form>
         </Form>
       </CardContent>
