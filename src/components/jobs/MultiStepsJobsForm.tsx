@@ -2,11 +2,6 @@
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { Checkbox } from "../ui/checkbox";
 import { Stepper } from "../utils/Stepper";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -118,7 +113,7 @@ export default function MultiStepsJobsForm({
           );
           formData.append("workModel", values.step4.workModel);
           formData.append("benefits", values.step4.benefits || "");
-          const response = await createJobAction(formData);
+          await createJobAction(formData);
           toast.success("Vaga criada!");
           window.location.href = "/jobs";
         } catch (err) {
