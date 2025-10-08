@@ -51,6 +51,7 @@ export default function MultiStepsJobsForm({ job }: { job: Job | null }) {
   const [step, setStep] = useState(0);
   const form = useForm<z.infer<typeof JobFormSchema>>({
     resolver: zodResolver(JobFormSchema),
+    shouldFocusError: true,
     defaultValues: {
       step1: job
         ? {

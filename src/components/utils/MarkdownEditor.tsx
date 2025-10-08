@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
+import "@/styles/md-wysiwyg.css";
 
 // Lazy load do editor (evita erro no SSR)
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), {
@@ -49,6 +50,22 @@ export function MarkdownEditor({
         height={400}
         preview="live"
         visibleDragbar={false}
+        commandsFilter={(cmd) =>
+          cmd.name &&
+          [
+            "bold",
+            "italic",
+            "underline",
+            "ordered-list",
+            "unordered-list",
+            "link",
+            "quote",
+            "code",
+            "title",
+          ].includes(cmd.name)
+            ? cmd
+            : false
+        }
       />
     </div>
   );

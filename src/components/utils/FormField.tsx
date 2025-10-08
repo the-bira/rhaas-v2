@@ -6,19 +6,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormField as FormFieldUI,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea"; // ✅ Import do componente textarea
-import { Control, Controller, FieldValues, Path } from "react-hook-form";
+import { Textarea } from "@/components/ui/textarea";
+import { Control, FieldValues, Path } from "react-hook-form";
 import { useCallback, useId } from "react";
 import { cn } from "@/lib/utils";
 
-// ==========================
-// 🔢 Máscaras
-// ==========================
 const applyMask = (value: string, maskType?: string): string => {
   const digits = value.replace(/\D/g, "");
-
   switch (maskType) {
     case "cpf":
       return digits
@@ -26,7 +23,6 @@ const applyMask = (value: string, maskType?: string): string => {
         .replace(/(\d{3})(\d)/, "$1.$2")
         .replace(/(\d{3})(\d)/, "$1.$2")
         .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-
     case "cnpj":
       return digits
         .slice(0, 14)
@@ -34,7 +30,6 @@ const applyMask = (value: string, maskType?: string): string => {
         .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
         .replace(/\.(\d{3})(\d)/, ".$1/$2")
         .replace(/(\d{4})(\d)/, "$1-$2");
-
     case "phone":
       if (digits.length <= 10) {
         return digits
@@ -45,24 +40,11 @@ const applyMask = (value: string, maskType?: string): string => {
         .slice(0, 11)
         .replace(/^(\d{2})(\d)/g, "($1) $2")
         .replace(/(\d{5})(\d)/, "$1-$2");
-
     default:
       return value;
   }
 };
 
-// ==========================
-// ✅ Regex Validators (caso queira validar com Zod também)
-// ==========================
-export const regexValidators = {
-  cpf: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
-  cnpj: /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/,
-  phone: /^\(\d{2}\) \d{4,5}-\d{4}$/,
-};
-
-// ==========================
-// ⚙️ Componente genérico de campo
-// ==========================
 interface FormFieldProps<T extends FieldValues> {
   control: Control<T>;
   name: Path<T>;
@@ -96,6 +78,7 @@ const sizeClasses = {
     description: "text-lg text-muted-foreground",
   },
 };
+
 const FormField = <T extends FieldValues>({
   control,
   name,
@@ -106,7 +89,7 @@ const FormField = <T extends FieldValues>({
   description,
   size = "normal",
 }: FormFieldProps<T>) => {
-  const stableId = useId() + "-" + name.replace(/\./g, "-");
+  const stableId = useId() + "-" + String(name).replace(/\./g, "-");
 
   const handleChange = useCallback(
     (onChange: (value: string) => void) =>
@@ -119,7 +102,7 @@ const FormField = <T extends FieldValues>({
   );
 
   return (
-    <Controller
+    <FormFieldUI
       control={control}
       name={name}
       render={({ field }) => (
@@ -153,7 +136,8 @@ const FormField = <T extends FieldValues>({
               {description}
             </FormDescription>
           )}
-          <FormMessage />
+          <FormMessage />{" "}
+          {/* agora funciona porque há contexto do FormFieldUI */}
         </FormItem>
       )}
     />

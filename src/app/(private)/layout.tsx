@@ -45,7 +45,12 @@ export default async function PrivateLayout({
         <div className="flex flex-col flex-1 relative z-10">
           {/* Header fixo (acima apenas do conteúdo, não da sidebar) */}
           <header className="sticky top-0 z-30 bg-background border-b shadow-sm">
-            <AppHeader user={user} tenant={user.memberships[0].tenant!} />
+            <AppHeader
+              user={{
+                name: user.name ?? undefined,
+                image: user.image ?? undefined,
+              }}
+            />
           </header>
 
           {/* Conteúdo da página */}
