@@ -15,11 +15,7 @@ type User = {
   // Add other user properties as needed
 };
 
-type Tenant = {
-  // Define tenant properties as needed
-};
-
-export function AppHeader({ user, tenant }: { user: User; tenant: Tenant }) {
+export function AppHeader({ user }: { user: User }) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
