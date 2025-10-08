@@ -9,13 +9,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from 'react';
 
-export function AppHeader({
-  user,
-  tenant,
-}: {
-  user: unknown;
-  tenant: unknown;
-}) {
+type User = {
+  name?: string;
+  image?: string;
+  // Add other user properties as needed
+};
+
+type Tenant = {
+  // Define tenant properties as needed
+};
+
+export function AppHeader({ user, tenant }: { user: User; tenant: Tenant }) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
