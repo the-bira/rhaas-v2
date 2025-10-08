@@ -12,13 +12,15 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useTransition } from "react";
-import { Job } from "@/generated/prisma";
+import { Job, JobTag } from "@/generated/prisma";
 import { WorkModel } from "@/enums/WorkModel";
 import { Form } from "../ui/form";
 import { JobInformationForm } from "./JobInformationForm";
 import { toast } from "sonner";
 import { JobDescriptionForm } from "./JobDescriptionForm";
 import { JobRequirementsForm } from "./JobRequirementsForm";
+import { JobBenefitsForm } from "./JobBenefitsForm";
+import { createJobAction } from "@/actions/jobs/createJobAction";
 
 const JobFormSchema = z.object({
   step1: z.object({
@@ -46,7 +48,13 @@ const JobFormSchema = z.object({
   }),
 });
 
-export default function MultiStepsJobsForm({ job }: { job: Job | null }) {
+type JobWithTags = Job & { tags?: JobTag[] };
+
+export default function MultiStepsJobsForm({
+  job,
+}: {
+  job: JobWithTags | null;
+}) {
   const [isPending, startTransition] = useTransition();
   const [step, setStep] = useState(0);
   const form = useForm<z.infer<typeof JobFormSchema>>({
@@ -55,7 +63,10 @@ export default function MultiStepsJobsForm({ job }: { job: Job | null }) {
       step1: job
         ? {
             title: job.title,
-            tags: job.tags.map((tag) => ({ label: tag })),
+            tags:
+              job.tags?.map((tag: { id: string; tag: string }) => ({
+                label: tag.tag,
+              })) || [],
           }
         : {
             title: "",
@@ -87,13 +98,35 @@ export default function MultiStepsJobsForm({ job }: { job: Job | null }) {
     "Benefícios da vaga",
   ];
 
-  const onSubmit = (values: z.infer<typeof JobFormSchema>) => {
-    if (step < totalSteps - 1) {
-      setStep(step + 1);
-    } else {
-      console.log(values);
-      toast.success("Vaga criada com sucesso!");
-    }
+  const onSubmit = async (values: z.infer<typeof JobFormSchema>) => {
+    startTransition(async () => {
+      if (step < totalSteps - 1) {
+        setStep(step + 1);
+      } else {
+        try {
+          const formData = new FormData();
+          formData.append("title", values.step1.title);
+          formData.append(
+            "tags",
+            values.step1.tags.map((tag) => tag.label).join(",")
+          );
+          formData.append("description", values.step2.description);
+          formData.append("requirements", values.step3.requirements || "");
+          formData.append(
+            "responsibilities",
+            values.step3.responsibilities || ""
+          );
+          formData.append("workModel", values.step4.workModel);
+          formData.append("benefits", values.step4.benefits || "");
+          const response = await createJobAction(formData);
+          toast.success("Vaga criada!");
+          window.location.href = "/jobs";
+        } catch (err) {
+          console.error(err);
+          toast.error("Erro ao criar vaga");
+        }
+      }
+    });
   };
 
   const handleBack = () => {
@@ -121,7 +154,6 @@ export default function MultiStepsJobsForm({ job }: { job: Job | null }) {
         break;
     }
 
-    // 🚦 Valida apenas o step atual
     const isValid = await form.trigger(fieldsToValidate);
 
     if (!isValid) {
@@ -132,7 +164,6 @@ export default function MultiStepsJobsForm({ job }: { job: Job | null }) {
     if (step < totalSteps - 1) {
       setStep((prev) => prev + 1);
     } else {
-      // último passo → submeter
       form.handleSubmit(onSubmit)();
     }
   };
@@ -158,6 +189,7 @@ export default function MultiStepsJobsForm({ job }: { job: Job | null }) {
               {step === 0 && <JobInformationForm />}
               {step === 1 && <JobDescriptionForm />}
               {step === 2 && <JobRequirementsForm />}
+              {step === 3 && <JobBenefitsForm />}
             </div>
             <div className="flex justify-between mt-auto pt-4 border-t">
               <Button

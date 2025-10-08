@@ -72,21 +72,21 @@ model User {
 }
 
 model Contact {
-  id String @id @default(uuid())
-  tenantId String
-  tenant Tenant @relation(fields: [tenantId], references: [id])
-  name String
-  email String
-  phone String
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  name      String
+  email     String
+  phone     String
   createdAt DateTime @default(now())
 }
 
 model Address {
-  id String @id @default(uuid())
+  id       String @id @default(uuid())
   tenantId String
-  tenant Tenant @relation(fields: [tenantId], references: [id])
-  street String
-  number String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  street   String
+  number   String
 }
 
 model Tenant {
@@ -157,7 +157,7 @@ model Job {
   salaryRangeMin   Float?
   salaryRangeMax   Float?
   salaryCurrency   String?      @default("BRL")
-  tags             String[]
+  tags             JobTag[]     @relation("JobTags")
   skills           String[]     @default([])
   embedding        Bytes? // ou Unsupported("vector") se você habilitar pgvector
   tenant           Tenant       @relation(fields: [tenantId], references: [id])
@@ -255,4 +255,11 @@ model TalentPool {
   notes       String?
   tags        String[]
   createdAt   DateTime @default(now())
+}
+
+model JobTag {
+  id        String   @id @default(uuid())
+  tag       String   @unique
+  jobs      Job[]    @relation("JobTags")
+  createdAt DateTime @default(now())
 }

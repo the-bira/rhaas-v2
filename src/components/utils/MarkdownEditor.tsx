@@ -63,6 +63,7 @@ export function MarkdownEditor({
       if (isInternalUpdate.current) return;
       onChange?.(editor.getHTML());
     },
+    immediatelyRender: false,
   });
 
   useEffect(() => {

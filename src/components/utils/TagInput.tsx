@@ -14,6 +14,7 @@ interface TagInputProps {
   value?: Tag[];
   onChange?: (tags: Tag[]) => void;
   onSearch?: (query: string) => Promise<Tag[]>; // chamada de busca externa
+  onCreate?: (label: string) => Promise<Tag>;
   placeholder?: string;
   maxTags?: number;
   disabled?: boolean;
@@ -23,6 +24,7 @@ export function TagInput({
   value = [],
   onChange,
   onSearch,
+  onCreate,
   placeholder = "Digite e pressione Enter...",
   maxTags,
   disabled,
@@ -39,7 +41,7 @@ export function TagInput({
       if (onSearch && inputValue.trim()) {
         setLoading(true);
         const result = await onSearch(inputValue);
-        setSuggestions(result);
+        setSuggestions(Array.isArray(result) ? result : []);
         setShowDropdown(true);
         setLoading(false);
       } else {
@@ -68,23 +70,58 @@ export function TagInput({
     setShowDropdown(false);
   };
 
-  // ❌ Remove tag
   const removeTag = (label: string) => {
     const newTags = value.filter((t) => t.label !== label);
     onChange?.(newTags);
   };
 
-  // ⌨️ Pressionar Enter cria tag
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && inputValue.trim()) {
+  // ⌨️ Pressionar Enter ou Tab
+  const handleKeyDown = async (e: KeyboardEvent<HTMLInputElement>) => {
+    const label = inputValue.trim();
+
+    if (e.key === "Tab" && suggestions.length > 0) {
       e.preventDefault();
-      addTag({ label: inputValue.trim() });
-    } else if (e.key === "Escape") {
+      addTag(suggestions[0]);
+      return;
+    }
+
+    if (e.key === "Enter" && label) {
+      e.preventDefault();
+
+      const existing = suggestions.find(
+        (s) => s.label.toLowerCase() === label.toLowerCase()
+      );
+      if (existing) {
+        addTag(existing);
+        return;
+      }
+
+      const tempTag = { id: `temp-${Date.now()}`, label };
+
+      // adiciona e obtém o novo estado (mais seguro)
+      const newTags = [...value, tempTag];
+      onChange?.(newTags);
+
+      if (onCreate) {
+        onCreate(label)
+          .then((persisted) => {
+            const updatedTags = newTags.map((t) =>
+              t.id === tempTag.id ? persisted : t
+            );
+            onChange?.(updatedTags); // ✅ usa newTags, não value antigo
+          })
+          .catch((err) => console.error("Erro ao persistir tag:", err));
+      }
+
+      setInputValue("");
+      setSuggestions([]);
       setShowDropdown(false);
     }
+
+    if (e.key === "Escape") setShowDropdown(false);
   };
 
-  // ⬇️ Clique fora fecha dropdown
+  // 🖱️ Clique fora fecha dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
