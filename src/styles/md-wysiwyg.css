@@ -1,53 +1,77 @@
-/* ===== WYSIWYG mode styles for react-md-editor ===== */
-
-.w-md-editor.w-md-editor-wysiwyg {
-  background-color: var(--color-canvas-default, #fff);
-  color: var(--color-fg-default, #24292e);
+/* === Estilos gerais do editor === */
+.tiptap-editor {
+  background-color: var(--color-bg, #fff);
+  color: var(--color-text, #24292e);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-}
-
-.w-md-editor-content {
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 0.5rem;
+  padding: 1rem;
   min-height: 300px;
   font-size: 16px;
   line-height: 1.6;
 }
 
-.w-md-editor-toolbar {
-  border-bottom: 1px solid var(--color-border-muted, #d0d7de);
-  background: var(--color-canvas-subtle, #f6f8fa);
+.tiptap-editor:focus {
+  outline: none;
+  border-color: var(--color-accent, #0969da);
+  box-shadow: 0 0 0 2px #0969da33;
 }
 
-.w-md-editor-toolbar button {
-  color: var(--color-fg-muted, #57606a);
-}
-
-.w-md-editor-toolbar button:hover {
-  color: var(--color-accent-fg, #0969da);
-  background-color: var(--color-accent-subtle, #ddf4ff);
-}
-
-.w-md-editor-text-pre > code,
-.w-md-editor-text-input {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
-}
-
-[data-color-mode="dark"] .w-md-editor.w-md-editor-wysiwyg {
+[data-color-mode="dark"] .tiptap-editor {
   background-color: #0d1117;
   color: #c9d1d9;
+  border-color: #30363d;
 }
 
-[data-color-mode="dark"] .w-md-editor-toolbar {
+/* === Listas === */
+.tiptap-editor ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+}
+
+.tiptap-editor ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+}
+
+/* === Toolbar === */
+.tiptap-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: var(--color-toolbar-bg, #f6f8fa);
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+[data-color-mode="dark"] .tiptap-toolbar {
   background: #161b22;
   border-color: #30363d;
 }
 
-[data-color-mode="dark"] .w-md-editor-toolbar button {
+.tiptap-toolbar button {
+  background: transparent;
+  border: none;
+  color: var(--color-fg, #57606a);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.tiptap-toolbar button:hover {
+  background-color: var(--color-accent-subtle, #ddf4ff);
+  color: var(--color-accent-fg, #0969da);
+}
+
+[data-color-mode="dark"] .tiptap-toolbar button {
   color: #8b949e;
 }
 
-[data-color-mode="dark"] .w-md-editor-toolbar button:hover {
+[data-color-mode="dark"] .tiptap-toolbar button:hover {
   background-color: #1f6feb33;
   color: #f0f6fc;
 }
