@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea"; // ✅ Import do componente textarea
 import { Control, Controller, FieldValues, Path } from "react-hook-form";
 import { useCallback, useId } from "react";
+import { cn } from "@/lib/utils";
 
 // ==========================
 // 🔢 Máscaras
@@ -70,8 +71,31 @@ interface FormFieldProps<T extends FieldValues> {
   type?: "text" | "email" | "password" | "file" | "textarea";
   maskType?: "cpf" | "cnpj" | "phone";
   description?: string;
+  size?: "small" | "normal" | "big" | "large";
 }
 
+const sizeClasses = {
+  small: {
+    input: "h-8 text-sm px-2",
+    label: "text-sm",
+    description: "text-xs text-muted-foreground",
+  },
+  normal: {
+    input: "h-10 text-base px-3",
+    label: "text-base",
+    description: "text-sm text-muted-foreground",
+  },
+  big: {
+    input: "h-12 text-base px-4",
+    label: "text-lg font-medium",
+    description: "text-base text-muted-foreground",
+  },
+  large: {
+    input: "h-14 text-xl font-semibold px-5",
+    label: "text-xl font-bold",
+    description: "text-lg text-muted-foreground",
+  },
+};
 const FormField = <T extends FieldValues>({
   control,
   name,
@@ -80,6 +104,7 @@ const FormField = <T extends FieldValues>({
   placeholder,
   maskType,
   description,
+  size = "normal",
 }: FormFieldProps<T>) => {
   const stableId = useId() + "-" + name.replace(/\./g, "-");
 
@@ -99,7 +124,9 @@ const FormField = <T extends FieldValues>({
       name={name}
       render={({ field }) => (
         <FormItem>
-          <FormLabel htmlFor={stableId}>{label}</FormLabel>
+          <FormLabel htmlFor={stableId} className={cn(sizeClasses[size].label)}>
+            {label}
+          </FormLabel>
           <FormControl>
             {type === "textarea" ? (
               <Textarea
@@ -107,7 +134,8 @@ const FormField = <T extends FieldValues>({
                 {...field}
                 placeholder={placeholder}
                 onChange={handleChange(field.onChange)}
-                rows={4}
+                className={cn(sizeClasses[size].input)}
+                rows={size === "small" ? 2 : size === "large" ? 6 : 4}
               />
             ) : (
               <Input
@@ -116,10 +144,15 @@ const FormField = <T extends FieldValues>({
                 type={type}
                 placeholder={placeholder}
                 onChange={handleChange(field.onChange)}
+                className={cn(sizeClasses[size].input)}
               />
             )}
           </FormControl>
-          {description && <FormDescription>{description}</FormDescription>}
+          {description && (
+            <FormDescription className={cn(sizeClasses[size].description)}>
+              {description}
+            </FormDescription>
+          )}
           <FormMessage />
         </FormItem>
       )}
