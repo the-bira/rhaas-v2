@@ -2,27 +2,24 @@
 "use client"
 
 import * as React from "react"
-import { ChevronsUpDown, Building2 } from "lucide-react"
-import { Tenant } from "@/generated/prisma"
+import { ChevronsUpDown, Building2 } from "lucide-react";
+import { Tenant } from "@/generated/prisma";
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+} from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Link from "next/link";
 
-export function CompanySwitcher({
-  tenant,
-}: {
-  tenant: Tenant
-}) {
+export function CompanySwitcher({ tenant }: { tenant: Tenant }) {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -84,14 +81,12 @@ export function CompanySwitcher({
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem>
-              Configurações da Empresa
+              <Link href="/tenant">Configurações da Empresa</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              Trocar Empresa
-            </DropdownMenuItem>
+            <DropdownMenuItem>Trocar Empresa</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }

@@ -1,6 +1,7 @@
 import SidebarGrip from "@/components/SidebarGrip";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/utils/AppSidebar";
+import { AppHeader } from "@/components/utils/Header";
 import { db } from "@/db";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -12,17 +13,47 @@ export default async function PrivateLayout({
 }) {
   const headersList = await headers();
   const tenantId = headersList.get("x-tenant-id");
-  if (!tenantId) {
-    return redirect("/sign-in");
+  const userId = headersList.get("x-user-id");
+
+  if (!userId || !tenantId) {
+    redirect("/sign-in");
   }
-  const tenant = await db.tenant.findUnique({ where: { id: tenantId } });
+
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    include: { memberships: { include: { tenant: true } } },
+  });
+
+  console.log(user);
+
+  if (!user) {
+    redirect("/sign-in");
+  }
+
   return (
     <SidebarProvider>
-      {tenant && <AppSidebar tenant={tenant} />}
-      <SidebarGrip />
-      <main className="max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl w-full mx-auto p-4">
-        {children}
-      </main>
+      <div className="flex min-h-screen w-full bg-background text-foreground overflow-hidden">
+        {/* 🧭 Sidebar fixa à esquerda */}
+        <aside
+          data-sidebar
+          className="group/sidebar relative z-20 border-r bg-card transition-all duration-300 ease-in-out data-[state=open]:w-64 data-[state=collapsed]:w-[4.5rem] flex-shrink-0"
+        >
+          <AppSidebar tenant={user.memberships[0].tenant!} />
+        </aside>
+
+        {/* 🌐 Conteúdo principal */}
+        <div className="flex flex-col flex-1 relative z-10">
+          {/* Header fixo (acima apenas do conteúdo, não da sidebar) */}
+          <header className="sticky top-0 z-30 bg-background border-b shadow-sm">
+            <AppHeader user={user} tenant={user.memberships[0].tenant!} />
+          </header>
+
+          {/* Conteúdo da página */}
+          <main className="flex-1 overflow-y-auto p-6 w-full">
+            <div className="max-w-7xl mx-auto">{children}</div>
+          </main>
+        </div>
+      </div>
     </SidebarProvider>
   );
 }

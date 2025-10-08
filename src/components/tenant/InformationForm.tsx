@@ -50,9 +50,8 @@ const TenantInformationFormSchema = z.object({
 });
 
 export default function TenantInformationForm({ tenant }: { tenant: Tenant }) {
-  const [mounted, setMounted] = useState(false);
+  
   const [isPending, startTransition] = useTransition();
-
 
   const form = useForm<z.infer<typeof TenantInformationFormSchema>>({
     resolver: zodResolver(TenantInformationFormSchema),
@@ -64,42 +63,11 @@ export default function TenantInformationForm({ tenant }: { tenant: Tenant }) {
       logoType: tenant.logoUrl ? "url" : "upload",
       logoFile: undefined,
       website: "",
-      industry:
-        tenant.industry || Industry.OTHER,
+      industry: tenant.industry || Industry.OTHER,
     },
   });
 
   const logoType = form.watch("logoType");
-
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted || !tenant) {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Informações da empresa</CardTitle>
-          <CardDescription>Carregando informações...</CardDescription>
-          <CardContent className="space-y-4">
-            <Skeleton className="h-10 w-1/2" /> {/* Nome */}
-            <Skeleton className="h-24 w-full" /> {/* Sobre */}
-            <Skeleton className="h-[400px] w-full" /> {/* Markdown Editor */}
-            <div className="flex gap-4">
-              <Skeleton className="h-10 w-24" /> {/* Radio 1 */}
-              <Skeleton className="h-10 w-24" /> {/* Radio 2 */}
-            </div>
-            <Skeleton className="h-10 w-full" /> {/* URL */}
-            <Skeleton className="h-10 w-full" /> {/* Website */}
-            <Skeleton className="h-10 w-full" /> {/* Select */}
-            <Skeleton className="h-12 w-32" /> {/* Botão */}
-          </CardContent>
-        </CardHeader>
-      </Card>
-    );
-  }
-  
 
   return (
     <Card className="w-full">
