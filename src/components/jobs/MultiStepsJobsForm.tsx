@@ -122,7 +122,7 @@ export default function MultiStepsJobsForm({ job }: { job: Job | null }) {
     }
 
     // 🚦 Valida apenas o step atual
-    const isValid = await form.trigger(fieldsToValidate as any);
+    const isValid = await form.trigger(fieldsToValidate);
 
     if (!isValid) {
       toast.error("Verifique os campos obrigatórios antes de continuar.");

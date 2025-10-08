@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormContext } from "react-hook-form";
-import { FormField } from "../ui/form";
+import { FormControl, FormField, FormItem, FormLabel } from "../ui/form";
 import { MarkdownEditor } from "../utils/MarkdownEditor";
 
 export const JobRequirementsForm = () => {
@@ -15,20 +15,30 @@ export const JobRequirementsForm = () => {
         control={form.control}
         name="step3.requirements"
         render={({ field }) => (
-          <MarkdownEditor
-            value={field.value}
-            onChange={(val) => field.onChange(val || "")}
-          />
+          <FormItem>
+            <FormLabel>Requisitos</FormLabel>
+            <FormControl>
+              <MarkdownEditor
+                value={field.value}
+                onChange={(val) => field.onChange(val || "")}
+              />
+            </FormControl>
+          </FormItem>
         )}
       />
       <FormField
         control={form.control}
         name="step3.responsibilities"
         render={({ field }) => (
-          <MarkdownEditor
-            value={field.value}
-            onChange={(val) => field.onChange(val || "")}
-          />
+          <FormItem>
+            <FormLabel>Reponsabilidades</FormLabel>
+            <FormControl>
+              <MarkdownEditor
+                value={field.value}
+                onChange={(val) => field.onChange(val || "")}
+              />
+            </FormControl>
+          </FormItem>
         )}
       />
     </div>

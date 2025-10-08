@@ -1,8 +1,8 @@
 "use client";
 
-import { useFormContext } from 'react-hook-form';
-import { FormField } from '../ui/form';
-import { MarkdownEditor } from '../utils/MarkdownEditor';
+import { useFormContext } from "react-hook-form";
+import { FormControl, FormField, FormItem, FormLabel } from "../ui/form";
+import { MarkdownEditor } from "../utils/MarkdownEditor";
 
 export const JobDescriptionForm = () => {
   const form = useFormContext();
@@ -15,10 +15,15 @@ export const JobDescriptionForm = () => {
         control={form.control}
         name="step2.description"
         render={({ field }) => (
-         <MarkdownEditor
-          value={field.value}
-          onChange={(val) => field.onChange(val || "")}
-          />
+          <FormItem>
+            <FormLabel>Descrição</FormLabel>
+            <FormControl>
+              <MarkdownEditor
+                value={field.value}
+                onChange={(val) => field.onChange(val || "")}
+              />
+            </FormControl>
+          </FormItem>
         )}
       />
     </div>
