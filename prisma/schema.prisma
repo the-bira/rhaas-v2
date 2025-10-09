@@ -279,3 +279,19 @@ model JobTag {
   jobs      Job[]    @relation("JobTags")
   createdAt DateTime @default(now())
 }
+
+model JobQueue {
+  id          String    @id @default(uuid())
+  type        String // "process_candidate", "generate_embeddings", etc
+  payload     Json
+  status      String    @default("pending") // "pending", "processing", "completed", "failed"
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  error       String?
+  scheduledAt DateTime  @default(now())
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, scheduledAt])
+}
