@@ -7,6 +7,7 @@ export default async function DashboardPage() {
 
   try {
     user = await getUserFromKinde();
+    console.log(user);
   } catch (error) {
     console.error(error);
   }
@@ -23,8 +24,6 @@ export default async function DashboardPage() {
       tenant: true,
     },
   });
-
-  console.log(membership?.tenant.onboardingStep);
 
   const redirectUrl =
     membership?.tenant.onboardingStep === "users"

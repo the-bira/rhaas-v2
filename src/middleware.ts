@@ -23,23 +23,26 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/sign-in", req.url));
   }
 
-  
   // Buscar tenantId do usuário
   const membership = await db.membership.findFirst({
     where: { userId: user.id },
-    select: { tenantId: true }
+    select: { tenantId: true },
   });
+
+  if (!membership) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
 
   const res = NextResponse.next();
   res.headers.set("x-user-id", user?.id ?? "");
   res.headers.set("x-user-email", user?.email ?? "");
   res.headers.set("x-tenant-id", membership?.tenantId ?? ""); // ✅ Adicionar tenantId
-  
+
   return res;
 }
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|sign-in|sign-up|api/auth|job/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sign-in|sign-up|api/auth|job/|dashboard).*)",
   ],
 };

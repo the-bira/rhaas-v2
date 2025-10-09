@@ -6,17 +6,28 @@ export async function getUserFromKinde() {
     const { getUser } = getKindeServerSession();
     const user = await getUser();
 
-    if (!user) return null; // 👈 evita crash na build
+    if (!user) return null;
 
-    const existing = await db.user.findUnique({
+    // 🧠 busca tanto por kindeId quanto por email (garante compatibilidade)
+    const existing = await db.user.findFirst({
       where: {
-        kindeId: user.id,
+        OR: [{ kindeId: user.id }, { email: user.email! }],
       },
     });
 
-    if (existing) return existing;
+    // ⚙️ Se já existir, garante que o kindeId está vinculado
+    if (existing) {
+      if (!existing.kindeId) {
+        await db.user.update({
+          where: { id: existing.id },
+          data: { kindeId: user.id },
+        });
+      }
+      return existing;
+    }
 
-    return db.user.create({
+    // 🪄 Se não existir, cria normalmente
+    return await db.user.create({
       data: {
         kindeId: user.id,
         email: user.email!,
