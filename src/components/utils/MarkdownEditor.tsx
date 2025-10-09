@@ -64,6 +64,11 @@ export function MarkdownEditor({
       onChange?.(editor.getHTML());
     },
     immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        class: "h-full",
+      },
+    },
   });
 
   useEffect(() => {
@@ -169,7 +174,10 @@ export function MarkdownEditor({
       </div>
 
       {/* Editor */}
-      <EditorContent editor={editor} className="tiptap-editor" />
+      <EditorContent
+        editor={editor}
+        className="tiptap-editor h-[400px] overflow-y-auto"
+      />
     </div>
   );
 }

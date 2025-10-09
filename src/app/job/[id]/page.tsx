@@ -16,7 +16,7 @@ export async function generateMetadata({
   const { id } = await params;
 
   const job = await db.job.findUnique({
-    where: { id },
+    where: { id, publishedAt: { not: null } },
     include: { tenant: true },
   });
 

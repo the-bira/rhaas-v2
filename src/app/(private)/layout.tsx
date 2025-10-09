@@ -1,4 +1,3 @@
-import SidebarGrip from "@/components/SidebarGrip";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/utils/AppSidebar";
 import { AppHeader } from "@/components/utils/Header";
@@ -14,6 +13,8 @@ export default async function PrivateLayout({
   const headersList = await headers();
   const tenantId = headersList.get("x-tenant-id");
   const userId = headersList.get("x-user-id");
+
+  console.log(userId, tenantId);
 
   if (!userId || !tenantId) {
     redirect("/sign-in");
