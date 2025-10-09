@@ -1,6 +1,8 @@
-import TenantTabs from '@/components/tenant/Tabs';
-import { db } from '@/db';
-import { headers } from 'next/headers';
+export const dynamic = "force-dynamic";
+
+import TenantTabs from "@/components/tenant/Tabs";
+import { db } from "@/db";
+import { headers } from "next/headers";
 
 const fetchTenant = async () => {
   try {
@@ -34,7 +36,7 @@ const fetchTenant = async () => {
       headers: { "Content-Type": "application/json" },
     });
   }
-}
+};
 
 export default async function TenantPage() {
   const tenant = await fetchTenant();
@@ -42,7 +44,7 @@ export default async function TenantPage() {
 
   return (
     <>
-      <TenantTabs tenant={tenantData} />      
+      <TenantTabs tenant={tenantData} />
     </>
   );
 }
