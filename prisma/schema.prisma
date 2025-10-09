@@ -160,15 +160,16 @@ model Job {
   tags             JobTag[]     @relation("JobTags")
   skills           String[]     @default([])
   embedding        Bytes? // ou Unsupported("vector") se você habilitar pgvector
-  tenant           Tenant       @relation(fields: [tenantId], references: [id])
+  tenant           Tenant           @relation(fields: [tenantId], references: [id])
   interviews       Interview[]
+  applications     JobApplication[]
   publishedAt      DateTime? // data de publicação
   expirationDate   DateTime?
-  isActive         Boolean      @default(true)
+  isActive         Boolean          @default(true)
   applicationUrl   String?
   metadataJson     Json? // guarda JSON cru da importação externa
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
   FinalScore       FinalScore[]
 }
 
@@ -184,9 +185,22 @@ model Candidate {
   status           String             @default("applied")
   tenant           Tenant             @relation(fields: [tenantId], references: [id])
   interviews       Interview[]
+  applications     JobApplication[]
   createdAt        DateTime           @default(now())
   AssessmentResult AssessmentResult[]
   FinalScore       FinalScore[]
+}
+
+model JobApplication {
+  id          String    @id @default(uuid())
+  jobId       String
+  candidateId String
+  message     String?
+  status      String    @default("pending") // "pending", "reviewing", "accepted", "rejected"
+  job         Job       @relation(fields: [jobId], references: [id])
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Interview {

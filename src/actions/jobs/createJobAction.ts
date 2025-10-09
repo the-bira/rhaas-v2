@@ -7,12 +7,29 @@ export async function createJobAction(formData: FormData) {
   const headersList = await headers();
   const tenantId = headersList.get("x-tenant-id");
 
-  if (!tenantId) {
-    throw new Error("Tenant not found");
-  }
+  if (!tenantId) throw new Error("Tenant not found");
 
-  const tags = formData.getAll("tags") as string[];
+  const tagsRaw = formData.getAll("tags") as string[];
+  const uniqueTags = new Set(
+    tagsRaw
+      .flatMap((t) => t.split(","))
+      .map((t) => t.trim())
+      .filter(Boolean)
+  );
 
+  // 🔁 Garante que todas as tags existam no banco (upsert)
+  const tags = await Promise.all(
+    Array.from(uniqueTags).map(async (label) => {
+      const existing = await db.jobTag.findFirst({
+        where: { tag: label },
+      });
+      return existing
+        ? existing
+        : await db.jobTag.create({ data: { tag: label } });
+    })
+  );
+
+  // 🧩 Cria o job com relacionamento
   const job = await db.job.create({
     data: {
       tenantId,
@@ -23,18 +40,11 @@ export async function createJobAction(formData: FormData) {
       benefits: formData.get("benefits") as string,
       workModel: formData.get("workModel")?.toString() || "",
       contractType: formData.get("contractType")?.toString() || "",
-
-      // 🔥 conecta ou cria tags dinamicamente
       tags: {
-        connectOrCreate: tags.map((tag) => ({
-          where: { tag },
-          create: { tag },
-        })),
+        connect: tags.map((t) => ({ id: t.id })),
       },
     },
-    include: {
-      tags: true, // opcional: retorna as tags junto
-    },
+    include: { tags: true },
   });
 
   return job;
