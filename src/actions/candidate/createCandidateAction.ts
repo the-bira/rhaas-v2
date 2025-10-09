@@ -2,6 +2,7 @@
 
 import { db } from "@/db";
 import { vercelBlobUpload } from "@/lib/vercelBlobUpload";
+import { inngest } from "@/lib/inngest/client";
 
 export async function createCandidateAction(formData: FormData) {
   try {
@@ -15,7 +16,15 @@ export async function createCandidateAction(formData: FormData) {
     const resumeFile = formData.get("resume") as File;
 
     // Validações básicas
-    if (!jobId || !tenantId || !name || !email || !phone || !message || !resumeFile) {
+    if (
+      !jobId ||
+      !tenantId ||
+      !name ||
+      !email ||
+      !phone ||
+      !message ||
+      !resumeFile
+    ) {
       throw new Error("Campos obrigatórios não preenchidos");
     }
 
@@ -43,6 +52,24 @@ export async function createCandidateAction(formData: FormData) {
         status: "pending",
       },
     });
+
+    // 🚀 Enfileirar processamento em background com Inngest
+    try {
+      await inngest.send({
+        name: "candidate/process.requested",
+        data: {
+          candidateId: candidate.id,
+          jobId,
+        },
+      });
+      console.log(
+        `✅ Candidato ${candidate.id} enfileirado para processamento`
+      );
+    } catch (error) {
+      console.error("⚠️ Erro ao enfileirar processamento:", error);
+      // Não falhamos a criação se o enfileiramento falhar
+      // O cron job pegará depois
+    }
 
     return { success: true, candidate, application };
   } catch (error) {
