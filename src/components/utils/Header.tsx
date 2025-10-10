@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from 'react';
+import Link from "next/link";
 
 type User = {
   name?: string;
@@ -29,8 +30,10 @@ export function AppHeader({ user }: { user: User }) {
       </div>
 
       <div className="flex items-center gap-3">
-        <Button variant="outline" className="gap-1">
-          <PlusIcon className="w-4 h-4" /> Nova Vaga
+        <Button variant="outline" className="gap-1" asChild>
+          <Link href="/jobs/new">
+            <PlusIcon className="w-4 h-4" /> Nova Vaga
+          </Link>
         </Button>
 
         <Button variant="ghost" size="icon">

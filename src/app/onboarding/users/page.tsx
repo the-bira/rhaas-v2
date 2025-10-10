@@ -6,7 +6,10 @@ const setOnboardingStep = async () => {
   const headersList = await headers();
   const tenantId = headersList.get("x-tenant-id");
   if (!tenantId) {
-    throw new Error("Tenant not found");
+    return new Response(JSON.stringify({ error: "Tenant not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
   }
   await db.tenant.update({
     where: { id: tenantId },

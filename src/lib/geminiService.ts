@@ -1,8 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 if (!apiKey) {
-  throw new Error("GEMINI_API_KEY is not defined in environment variables.");
+  throw new Error(
+    "GEMINI_API_KEY ou GOOGLE_API_KEY não está definida nas variáveis de ambiente."
+  );
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -141,9 +143,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
   // Garantir que tem 768 dimensões
   if (embedding.length !== 768) {
-    throw new Error(
-      `Expected 768 dimensions, got ${embedding.length}`
-    );
+    throw new Error(`Expected 768 dimensions, got ${embedding.length}`);
   }
 
   return embedding;
@@ -239,7 +239,7 @@ export function prepareJobForEmbedding(job: {
 
 /**
  * Calcula score de compatibilidade entre candidato e vaga
- * Usa IA para análise semântica profunda
+ * Usa IA para análise semântica profunda com critérios rigorosos
  * Retorna score de 0-100
  */
 export async function matchCandidateToJob(
@@ -248,6 +248,7 @@ export async function matchCandidateToJob(
     title: string;
     description: string;
     requirements?: string | null;
+    responsibilities?: string | null;
     skills?: string[];
   }
 ): Promise<{
@@ -258,56 +259,179 @@ export async function matchCandidateToJob(
 }> {
   const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-  const prompt = `
-Você é um especialista em recrutamento e seleção de talentos.
+  // Limpar HTML tags
+  const cleanDescription =
+    job.description
+      ?.replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim() || "";
+  const cleanRequirements =
+    job.requirements
+      ?.replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim() || "";
+  const cleanResponsibilities =
+    job.responsibilities
+      ?.replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim() || "";
 
-Analise a compatibilidade entre o candidato e a vaga abaixo e retorne um JSON com a seguinte estrutura:
+  const prompt = `
+Você é um especialista sênior em recrutamento e seleção de talentos com 15+ anos de experiência.
+
+Analise com RIGOR TÉCNICO a compatibilidade entre o candidato e a vaga. Retorne um JSON com esta estrutura:
 
 {
   "score": 85,
   "strengths": ["ponto forte 1", "ponto forte 2", "ponto forte 3"],
   "gaps": ["lacuna 1", "lacuna 2"],
-  "recommendation": "Recomendação sobre o candidato para esta vaga"
+  "recommendation": "Recomendação fundamentada sobre o candidato"
 }
 
-⚙️ **Critérios de avaliação**:
-- **Score (0-100)**:
-  - 90-100: Excelente match, candidato ideal
-  - 75-89: Muito bom, candidato qualificado
-  - 60-74: Bom, candidato com potencial
-  - 40-59: Mediano, algumas lacunas importantes
-  - 0-39: Fraco, não recomendado
+⚙️ **CRITÉRIOS DE AVALIAÇÃO RIGOROSOS**:
 
-- Considere:
-  - Experiência em posições similares
-  - Skills técnicas necessárias vs skills do candidato
-  - Nível de senioridade compatível
-  - Formação acadêmica relevante
-  - Idiomas necessários
+📊 **Score (0-100)** - Seja criterioso e realista:
+  - 90-100: Match excepcional - candidato ideal com todos requisitos + diferenciais
+  - 75-89: Match muito bom - atende requisitos principais + boa experiência
+  - 60-74: Match aceitável - atende requisitos básicos, algumas lacunas
+  - 40-59: Match fraco - lacunas significativas em requisitos importantes
+  - 0-39: Não recomendado - não atende requisitos fundamentais
 
-- **Strengths**: Liste os 3-5 principais pontos fortes do candidato para esta vaga
-- **Gaps**: Liste as principais lacunas ou skills ausentes (máximo 5)
-- **Recommendation**: Texto curto (2-3 frases) recomendando ou não o candidato
+🎯 **ANÁLISE OBRIGATÓRIA** (peso 60% do score):
 
-📋 **VAGA**:
-Título: ${job.title}
-Descrição: ${job.description?.replace(/<[^>]*>/g, " ").slice(0, 1000)}
-${job.requirements ? `Requisitos: ${job.requirements.replace(/<[^>]*>/g, " ").slice(0, 500)}` : ""}
-${job.skills && job.skills.length > 0 ? `Skills necessárias: ${job.skills.join(", ")}` : ""}
+1. **NÍVEL DO CARGO** (identifique o nível da vaga):
+   - Operacional: execução de tarefas, baixa autonomia
+   - Técnico: conhecimento especializado, média autonomia
+   - Especialista: expert em área específica, alta autonomia
+   - Liderança: gestão de pessoas e processos
+   - Estratégico: decisões de alto impacto, C-level
+   
+   → Candidato tem experiência comprovada neste nível?
 
-👤 **CANDIDATO**:
-Nome: ${resume.personalInfo?.name || "Não informado"}
-Skills: ${resume.skills?.join(", ") || "Nenhuma skill listada"}
+2. **SENIORIDADE** (identifique o nível exigido):
+   - Júnior: 0-3 anos de experiência
+   - Pleno: 3-6 anos de experiência
+   - Sênior: 6-10 anos de experiência
+   - Especialista/Lead: 10+ anos de experiência
+   
+   → Anos de experiência do candidato são compatíveis?
+   → Se vaga pede "experiência prévia", candidato tem quantos anos?
 
-Experiências:
-${resume.experiences?.map((e) => `- ${e.position} na ${e.company} (${e.startDate || ""} - ${e.endDate || ""}): ${e.description || ""}`).join("\n") || "Nenhuma experiência listada"}
+3. **REQUISITOS TÉCNICOS OBRIGATÓRIOS**:
+   → Candidato possui TODAS as skills/tecnologias obrigatórias?
+   → Tem anos de experiência suficientes em cada uma?
+   → Skills no currículo ≠ experiência profunda
 
-Formação:
-${resume.education?.map((e) => `- ${e.degree} em ${e.field || ""} - ${e.institution}`).join("\n") || "Nenhuma formação listada"}
+4. **RESPONSABILIDADES DA VAGA**:
+   → Candidato já exerceu responsabilidades similares?
+   → Tem experiência no escopo de atuação descrito?
 
-Idiomas: ${resume.languages?.map((l) => `${l.language} (${l.proficiency})`).join(", ") || "Não informado"}
+📈 **ANÁLISE COMPLEMENTAR** (peso 40% do score):
 
-Retorne APENAS o JSON válido, sem comentários.
+5. **FORMAÇÃO ACADÊMICA**:
+   → Atende requisito de formação (se houver)?
+   → Formação é relevante para a área?
+
+6. **PROGRESSÃO DE CARREIRA**:
+   → Candidato mostra evolução consistente?
+   → Mudanças de cargo fazem sentido?
+
+7. **CERTIFICAÇÕES** (se houver):
+   → Possui certificações relevantes para a vaga?
+
+8. **IDIOMAS** (se requisito):
+   → Atende nível de proficiência exigido?
+
+9. **EXPERIÊNCIAS RECENTES vs ANTIGAS**:
+   → Experiência relevante é recente (últimos 3-5 anos)?
+   → Ou é de muito tempo atrás?
+
+⚠️ **REGRAS RÍGIDAS**:
+- Se falta requisito OBRIGATÓRIO → score máximo 50
+- Se senioridade incompatível → score máximo 60
+- Se nível do cargo incompatível → score máximo 65
+- Se formação obrigatória ausente → score máximo 55
+- Experiência de 1 ano ≠ experiência sólida
+- Skill no currículo sem contexto = experiência questionável
+
+📋 **INFORMAÇÕES DA VAGA**:
+
+**Título do Cargo**: ${job.title}
+
+**Descrição Completa**:
+${cleanDescription}
+
+**Requisitos Obrigatórios**:
+${cleanRequirements || "Não especificado"}
+
+**Responsabilidades do Cargo**:
+${cleanResponsibilities || "Não especificado"}
+
+**Skills Necessárias**:
+${
+  job.skills && job.skills.length > 0
+    ? job.skills.join(", ")
+    : "Não especificado"
+}
+
+👤 **INFORMAÇÕES DO CANDIDATO**:
+
+**Nome**: ${resume.personalInfo?.name || "Não informado"}
+
+**Skills Declaradas**: 
+${resume.skills?.join(", ") || "Nenhuma skill listada"}
+
+**Experiências Profissionais**:
+${
+  resume.experiences
+    ?.map((e) => {
+      const duration =
+        e.startDate && e.endDate ? `(${e.startDate} - ${e.endDate})` : "";
+      return `- ${e.position} na ${e.company} ${duration}
+  Atividades: ${e.description || "Não informado"}
+  Conquistas: ${e.achievements?.join("; ") || "Não informado"}`;
+    })
+    .join("\n\n") || "Nenhuma experiência listada"
+}
+
+**Formação Acadêmica**:
+${
+  resume.education
+    ?.map(
+      (e) =>
+        `- ${e.degree} em ${e.field || "área não especificada"} - ${
+          e.institution
+        } (${e.startDate || ""} - ${e.endDate || ""})`
+    )
+    .join("\n") || "Nenhuma formação listada"
+}
+
+**Certificações**:
+${
+  resume.certifications
+    ?.map(
+      (c) =>
+        `- ${c.name} (${c.issuer || "emissor não informado"}) - ${c.date || ""}`
+    )
+    .join("\n") || "Nenhuma certificação listada"
+}
+
+**Idiomas**: 
+${
+  resume.languages?.map((l) => `${l.language} - ${l.proficiency}`).join(", ") ||
+  "Não informado"
+}
+
+**Resumo Profissional**:
+${resume.summary || "Não informado"}
+
+🎯 **INSTRUÇÕES FINAIS**:
+- Seja CRITERIOSO e REALISTA no score
+- Em **strengths**: liste 3-5 pontos fortes CONCRETOS (não genéricos)
+- Em **gaps**: liste lacunas ESPECÍFICAS (skills ausentes, falta de experiência em X, etc)
+- Em **recommendation**: seja direto - recomenda ou não? Por quê?
+- Retorne APENAS o JSON válido, sem comentários ou explicações adicionais
+
 `;
 
   const result = await model.generateContent(prompt);

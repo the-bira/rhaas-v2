@@ -25,7 +25,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Trash2, Plus } from "lucide-react";
 import { useTransition } from "react";
-import { inviteUsersAction } from '@/actions/onboarding/inviteUsersAction';
+import { useRouter } from "next/navigation";
+import { inviteUsersAction } from "@/actions/onboarding/inviteUsersAction";
 
 // ✅ Schema com array dinâmico
 const inviteUsersSchema = z.object({
@@ -47,14 +48,10 @@ const verifyUsersArrayIsNotEmptyOrFilled = (
   return users.some((user) => user.email && user.role);
 };
 
-const redirectToDashboard = () => {
-  window.location.href = "/dashboard";
-}
-
-
 export default function InviteUsersForm() {
   const [isPending, startTransition] = useTransition();
-  
+  const router = useRouter();
+
   const form = useForm<InviteUsersFormData>({
     resolver: zodResolver(inviteUsersSchema),
     defaultValues: {
@@ -84,7 +81,7 @@ export default function InviteUsersForm() {
                 try {
                   const response = await inviteUsersAction(formData);
                   toast.success("Convites enviados com sucesso!");
-                  window.location.href = response.redirectUrl;
+                  router.push(response.redirectUrl);
                 } catch (error) {
                   console.error(error);
                   toast.error("Erro ao enviar convites");
@@ -187,7 +184,7 @@ export default function InviteUsersForm() {
               </Button>
             ) : (
               <Button
-                onClick={redirectToDashboard}
+                onClick={() => router.push("/dashboard")}
                 className="w-full"
                 disabled={isPending}
               >

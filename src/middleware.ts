@@ -5,11 +5,10 @@ import type { NextRequest } from "next/server";
 import { db } from "@/db-edge";
 
 export async function middleware(req: NextRequest) {
-
   if (req.nextUrl.pathname.startsWith("/api/inngest")) {
     return NextResponse.next();
   }
-  
+
   const { isAuthenticated, getUser } = getKindeServerSession();
   const authed = await isAuthenticated();
 
@@ -35,7 +34,8 @@ export async function middleware(req: NextRequest) {
   });
 
   if (!membership) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+    // Redirecionar para onboarding se não tiver tenant
+    return NextResponse.redirect(new URL("/onboarding/company", req.url));
   }
 
   const res = NextResponse.next();
@@ -48,6 +48,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|sign-in|sign-up|api/auth|api/inngest|job/|dashboard).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sign-in|sign-up|api/auth|api/inngest|job/|onboarding).*)",
   ],
 };

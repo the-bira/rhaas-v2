@@ -63,6 +63,6 @@ export async function createCompanyAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/dashboard");
-  return { success: true, redirectUrl: "/dashboard" };
+  revalidatePath("/onboarding/users");
+  return { success: true, redirectUrl: "/onboarding/users" };
 }

@@ -42,11 +42,17 @@ export async function processCandidateAction(candidateId: string, jobId: string)
     });
 
     if (!candidate) {
-      throw new Error("Candidato não encontrado");
+      console.warn(
+        `⚠️ Candidato ${candidateId} não encontrado. Provavelmente foi excluído. Ignorando processamento.`
+      );
+      return { success: false, reason: "candidate_not_found", score: 0 };
     }
 
     if (!candidate.resumeUrl) {
-      throw new Error("Candidato não possui currículo anexado");
+      console.warn(
+        `⚠️ Candidato ${candidateId} não possui currículo. Ignorando processamento.`
+      );
+      return { success: false, reason: "no_resume", score: 0 };
     }
 
     // 2. Buscar vaga
@@ -97,6 +103,7 @@ export async function processCandidateAction(candidateId: string, jobId: string)
       title: job.title,
       description: job.description,
       requirements: job.requirements,
+      responsibilities: job.responsibilities,
       skills: job.skills,
     });
 

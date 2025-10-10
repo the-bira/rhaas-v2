@@ -12,6 +12,7 @@ import FormField from "@/components/utils/FormField";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -21,7 +22,7 @@ import {
 } from "../ui/card";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { Button } from '../ui/button';
+import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { createCompanyAction } from "@/actions/onboarding/createCompanyAction";
 import { toast } from "sonner";
@@ -41,6 +42,7 @@ const TenantWithUserPhoneNumberSchema = z.object({
 
 export default function CompanyForm() {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof TenantWithUserPhoneNumberSchema>>({
     resolver: zodResolver(TenantWithUserPhoneNumberSchema),
@@ -76,7 +78,8 @@ export default function CompanyForm() {
                 try {
                   const response = await createCompanyAction(formData);
                   toast.success("Empresa criada!");
-                  window.location.href = response.redirectUrl;
+                  // Usar router.push ao invés de window.location para evitar problemas de cache
+                  router.push(response.redirectUrl);
                 } catch (err) {
                   console.error(err);
                   toast.error("Erro ao criar empresa");

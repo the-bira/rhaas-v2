@@ -223,7 +223,9 @@ export default function TenantInformationForm({ tenant }: { tenant: Tenant }) {
                 )}
               />
 
-              <Button type="submit">Salvar</Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "Salvando..." : "Salvar"}
+              </Button>
             </form>
           </Form>
         </CardContent>

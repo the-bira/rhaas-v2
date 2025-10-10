@@ -49,6 +49,14 @@ export async function inviteUsersAction(formData: FormData) {
         }
       }
     }
+
+    // ✅ Marcar onboarding como completo
+    await tx.tenant.update({
+      where: { id: tenantId },
+      data: {
+        onboardingStep: "done",
+      },
+    });
   });
 
   return { success: true, redirectUrl: "/dashboard" };

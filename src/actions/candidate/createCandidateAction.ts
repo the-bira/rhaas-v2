@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { vercelBlobUpload } from "@/lib/vercelBlobUpload";
 import { inngest } from "@/lib/inngest/client";
+import { processCandidateAction } from "./processCandidateAction";
 
 export async function createCandidateAction(formData: FormData) {
   try {
@@ -53,7 +54,10 @@ export async function createCandidateAction(formData: FormData) {
       },
     });
 
-    // 🚀 Enfileirar processamento em background com Inngest
+    // 🚀 Processamento em background (duas abordagens)
+
+    // Abordagem 1: Inngest (preferencial - com retry e monitoramento)
+    let inngestQueued = false;
     try {
       await inngest.send({
         name: "candidate/process.requested",
@@ -62,13 +66,30 @@ export async function createCandidateAction(formData: FormData) {
           jobId,
         },
       });
-      console.log(
-        `✅ Candidato ${candidate.id} enfileirado para processamento`
-      );
+      inngestQueued = true;
+      console.log(`✅ Candidato ${candidate.id} enfileirado no Inngest`);
     } catch (error) {
-      console.error("⚠️ Erro ao enfileirar processamento:", error);
-      // Não falhamos a criação se o enfileiramento falhar
-      // O cron job pegará depois
+      console.error("⚠️ Erro ao enfileirar no Inngest:", error);
+    }
+
+    // Abordagem 2: Chamada direta assíncrona não bloqueante (fallback)
+    if (!inngestQueued) {
+      // Fire and forget - não espera terminar, não bloqueia resposta
+      processCandidateAction(candidate.id, jobId)
+        .then((result) => {
+          console.log(
+            `✅ Candidato ${candidate.id} processado diretamente: ${result.score}/100`
+          );
+        })
+        .catch((err) => {
+          console.error(`❌ Erro ao processar candidato ${candidate.id}:`, err);
+          // Erro será capturado, mas não afeta a criação
+          // O cron job do Inngest pegará depois se status ainda for "pending"
+        });
+
+      console.log(
+        `🔄 Candidato ${candidate.id} disparado para processamento direto (fallback)`
+      );
     }
 
     return { success: true, candidate, application };

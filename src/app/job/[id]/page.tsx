@@ -59,43 +59,85 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
 
   const job = await db.job.findUnique({
     where: { id },
-    include: { tags: true, tenant: true },
+    include: {
+      tags: true,
+      tenant: true,
+    },
   });
 
   if (!job) return notFound();
+
+  // Verificar se a vaga pode ser visualizada publicamente
+  // Regras:
+  // 1. Se publicada (publishedAt) e ativa (isActive) → público pode ver
+  // 2. Se rascunho ou inativa → apenas o tenant dono pode ver (preview)
+
+  const isPublished = job.publishedAt !== null && job.isActive;
+
+  if (!isPublished) {
+    // Vaga não publicada - verificar se é o tenant dono
+    const { getKindeServerSession } = await import(
+      "@kinde-oss/kinde-auth-nextjs/server"
+    );
+    const { isAuthenticated, getUser } = getKindeServerSession();
+    const authed = await isAuthenticated();
+
+    if (!authed) {
+      // Usuário não autenticado não pode ver rascunho
+      return notFound();
+    }
+
+    const userKinde = await getUser();
+    const user = await db.user.findUnique({
+      where: { kindeId: userKinde?.id },
+      include: {
+        memberships: {
+          where: { tenantId: job.tenantId },
+        },
+      },
+    });
+
+    // Se não for membro do tenant dono, não pode ver
+    if (!user || user.memberships.length === 0) {
+      return notFound();
+    }
+  }
 
   return (
     <>
       <ThemeToggle />
       <main className="container mx-auto py-10 px-4 min-h-screen">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Conteúdo principal */}
-        <div className="lg:col-span-2 space-y-8">
-          <JobHeader job={job} />
-          <JobMeta job={job} />
+          {/* Conteúdo principal */}
+          <div className="lg:col-span-2 space-y-8">
+            <JobHeader job={job} />
+            <JobMeta job={job} />
 
-          {job.description && (
-            <JobSection title="📘 Descrição da vaga" html={job.description} />
-          )}
-          {job.requirements && (
-            <JobSection title="✅ Requisitos" html={job.requirements} />
-          )}
-          {job.responsibilities && (
-            <JobSection title="🧠 Responsabilidades" html={job.responsibilities} />
-          )}
-          {job.benefits && (
-            <JobSection title="🎁 Benefícios" html={job.benefits} />
-          )}
+            {job.description && (
+              <JobSection title="📘 Descrição da vaga" html={job.description} />
+            )}
+            {job.requirements && (
+              <JobSection title="✅ Requisitos" html={job.requirements} />
+            )}
+            {job.responsibilities && (
+              <JobSection
+                title="🧠 Responsabilidades"
+                html={job.responsibilities}
+              />
+            )}
+            {job.benefits && (
+              <JobSection title="🎁 Benefícios" html={job.benefits} />
+            )}
 
-          <JobShareButtons job={job} />
-        </div>
-
-        {/* Formulário de candidatura */}
-        <aside className="lg:col-span-1">
-          <div className="sticky top-20">
-            <JobApplyForm jobId={job.id} tenantId={job.tenantId} />
+            <JobShareButtons job={job} />
           </div>
-        </aside>
+
+          {/* Formulário de candidatura */}
+          <aside className="lg:col-span-1">
+            <div className="sticky top-20">
+              <JobApplyForm jobId={job.id} tenantId={job.tenantId} />
+            </div>
+          </aside>
         </div>
       </main>
     </>

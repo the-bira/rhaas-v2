@@ -22,7 +22,7 @@ export function CandidateApplicationForm() {
         type="text"
         placeholder="Digite seu nome completo"
       />
-      
+
       <FormField
         control={form.control}
         name="step1.email"
@@ -30,7 +30,7 @@ export function CandidateApplicationForm() {
         type="email"
         placeholder="seu@email.com"
       />
-      
+
       <FormField
         control={form.control}
         name="step1.phone"
@@ -39,7 +39,7 @@ export function CandidateApplicationForm() {
         maskType="phone"
         placeholder="(11) 99999-9999"
       />
-      
+
       <FormField
         control={form.control}
         name="step1.linkedinUrl"
@@ -47,11 +47,11 @@ export function CandidateApplicationForm() {
         type="text"
         placeholder="https://linkedin.com/in/seu-perfil"
       />
-      
+
       <FormFieldUI
         control={form.control}
         name="step1.resume"
-        render={({ field: { onChange, ...fieldProps } }) => (
+        render={({ field: { onChange, value, ...fieldProps } }) => (
           <FormItem>
             <FormLabel>Currículo (PDF)</FormLabel>
             <FormControl>
@@ -71,7 +71,7 @@ export function CandidateApplicationForm() {
           </FormItem>
         )}
       />
-      
+
       <FormFieldUI
         control={form.control}
         name="step1.message"
