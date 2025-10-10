@@ -5,6 +5,11 @@ import type { NextRequest } from "next/server";
 import { db } from "@/db-edge";
 
 export async function middleware(req: NextRequest) {
+
+  if (req.nextUrl.pathname.startsWith("/api/inngest")) {
+    return NextResponse.next();
+  }
+  
   const { isAuthenticated, getUser } = getKindeServerSession();
   const authed = await isAuthenticated();
 
