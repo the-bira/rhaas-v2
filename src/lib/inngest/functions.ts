@@ -19,7 +19,9 @@ export const processCandidateFunction = inngest.createFunction(
   async ({ event, step }) => {
     const { candidateId, jobId } = event.data;
 
-    console.log(`🤖 Inngest: Processando candidato ${candidateId} para vaga ${jobId}`);
+    console.log(
+      `🤖 Inngest: Processando candidato ${candidateId} para vaga ${jobId}`
+    );
 
     // Step 1: Validar que candidato e vaga existem
     await step.run("validate-data", async () => {
@@ -45,11 +47,20 @@ export const processCandidateFunction = inngest.createFunction(
 
     // Step 3: Log de sucesso
     await step.run("log-completion", async () => {
-      console.log(`✅ Candidato ${candidateId} processado com sucesso!`);
-      console.log(`📊 Score: ${result.score}/100`);
-      console.log(`💪 Pontos fortes: ${result.strengths.join(", ")}`);
-      console.log(`⚠️ Gaps: ${result.gaps.join(", ")}`);
-      
+      // Verificar se o processamento foi bem-sucedido
+      if (result.success && "strengths" in result) {
+        console.log(`✅ Candidato ${candidateId} processado com sucesso!`);
+        console.log(`📊 Score: ${result.score}/100`);
+        console.log(`💪 Pontos fortes: ${result.strengths.join(", ")}`);
+        console.log(`⚠️ Gaps: ${result.gaps.join(", ")}`);
+      } else {
+        console.log(
+          `⚠️ Candidato ${candidateId} não processado: ${
+            "reason" in result ? result.reason : "Motivo desconhecido"
+          }`
+        );
+      }
+
       return {
         completed: true,
         timestamp: new Date().toISOString(),
