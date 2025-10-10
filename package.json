@@ -10,6 +10,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^2.0.20",
+    "@ai-sdk/openai": "^2.0.48",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.2.2",
     "@kinde-oss/kinde-auth-nextjs": "^2.9.2",
@@ -52,7 +54,9 @@
     "@tiptap/starter-kit": "^3.6.5",
     "@uiw/react-markdown-preview": "^5.1.5",
     "@uiw/react-md-editor": "^4.0.8",
+    "@vapi-ai/web": "^2.4.0",
     "@vercel/blob": "^2.0.0",
+    "ai": "^5.0.68",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -73,6 +77,7 @@
     "react-hook-form": "^7.64.0",
     "react-resizable-panels": "^3.0.6",
     "recharts": "^2.15.4",
+    "resend": "^6.1.2",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "vaul": "^1.1.2",

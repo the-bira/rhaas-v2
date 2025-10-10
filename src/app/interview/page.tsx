@@ -1,22 +1,49 @@
-import { Agent } from "@/components/interview/Agent";
-import { Badge } from "@/components/ui/badge";
+import { InterviewRoom } from "@/components/interview/InterviewRoom";
+import { getInterviewForCandidateAction } from "@/actions/candidate/startInterviewSessionAction";
+import { redirect } from "next/navigation";
 
-export default async function InterviewPage() {
+interface InterviewPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function InterviewPage({
+  searchParams,
+}: InterviewPageProps) {
+  const params = await searchParams;
+  const accessToken = params.token as string;
+
+  if (!accessToken) {
+    redirect("/");
+  }
+
+  // Buscar dados da entrevista usando token de acesso
+  const result = await getInterviewForCandidateAction(accessToken);
+
+  if (!result.success) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <div className="text-center space-y-4">
+          <div className="text-6xl">🔒</div>
+          <h1 className="text-2xl font-bold text-destructive">
+            Acesso Inválido
+          </h1>
+          <p className="text-muted-foreground max-w-md">{result.error}</p>
+          <p className="text-sm text-muted-foreground">
+            Se você recebeu um link de entrevista, verifique se copiou
+            corretamente ou entre em contato com o recrutador.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Desenvolvedor Full Stack</h1>
-        <Badge className="py-1 px-4 bg-primary/50 text-foreground rounded-sm">
-          Entrevista Comportamental e personalidade
-        </Badge>
-      </div>
-
-      <div className="relative flex flex-col md:flex-row gap-4 w-full min-h-[60vh] md:min-h-[70vh]">
-        <Agent type="user" name="Você" />
-
-        {/* IA */}
-        <Agent type="ai" />
-      </div>
-    </div>
+    <InterviewRoom
+      accessToken={accessToken}
+      jobTitle={result.interview.jobTitle}
+      candidateName={result.interview.candidateName || "Candidato"}
+      initialStatus={result.interview.status}
+      initialSessionId={result.interview.vapiSessionId}
+    />
   );
 }

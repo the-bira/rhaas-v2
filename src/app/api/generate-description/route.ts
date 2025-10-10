@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateText } from "ai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { headers } from "next/headers";
 import { db } from "@/db";
 
@@ -24,11 +25,13 @@ export async function POST(request: Request) {
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error("GEMINI_API_KEY is not defined in environment variables.");
+      throw new Error(
+        "GEMINI_API_KEY is not defined in environment variables."
+      );
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const google = createGoogleGenerativeAI({ apiKey });
+    const model = google("gemini-2.0-flash-exp");
 
     const prompt = `
 Você é um especialista em recrutamento e copywriting para vagas de tecnologia.
@@ -58,8 +61,10 @@ Gere uma resposta **exclusivamente em formato JSON válido**, com as seguintes c
 - Descrição longa da empresa: ${companyLongDescription}
     `;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const { text } = await generateText({
+      model,
+      prompt,
+    });
 
     // tenta fazer o parse seguro do JSON (Gemini às vezes adiciona \`\`\`)
     const cleaned = text

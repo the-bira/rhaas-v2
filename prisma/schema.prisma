@@ -142,37 +142,38 @@ model Invite {
 }
 
 model Job {
-  id               String       @id @default(uuid())
-  tenantId         String
-  title            String
-  subtitle         String? // opcional: "Full Stack Developer | Remote | R$10–15K"
-  description      String // markdown ou rich text
-  requirements     String? // markdown
-  responsibilities String? // markdown
-  benefits         String? // markdown ou JSON
-  workModel        String? // "Remoto" | "Híbrido" | "Presencial"
-  location         String? // "São Paulo, SP, Brasil"
-  country          String? // "Brasil"
-  city             String?
-  contractType     String? // "CLT", "PJ", "Freelancer", etc.
-  workSchedule     String? // "Integral", "Parcial", "Turno", etc.
-  salaryRangeMin   Float?
-  salaryRangeMax   Float?
-  salaryCurrency   String?      @default("BRL")
-  tags             JobTag[]                        @relation("JobTags")
-  skills           String[]                        @default([])
-  embedding        Unsupported("vector(768)")?
-  tenant           Tenant                          @relation(fields: [tenantId], references: [id])
-  interviews       Interview[]
-  applications     JobApplication[]
-  publishedAt      DateTime? // data de publicação
-  expirationDate   DateTime?
-  isActive         Boolean                         @default(true)
-  applicationUrl   String?
-  metadataJson     Json? // guarda JSON cru da importação externa
-  createdAt        DateTime                        @default(now())
-  updatedAt        DateTime                        @updatedAt
-  FinalScore       FinalScore[]
+  id                  String       @id @default(uuid())
+  tenantId            String
+  title               String
+  subtitle            String? // opcional: "Full Stack Developer | Remote | R$10–15K"
+  description         String // markdown ou rich text
+  requirements        String? // markdown
+  responsibilities    String? // markdown
+  benefits            String? // markdown ou JSON
+  workModel           String? // "Remoto" | "Híbrido" | "Presencial"
+  location            String? // "São Paulo, SP, Brasil"
+  country             String? // "Brasil"
+  city                String?
+  contractType        String? // "CLT", "PJ", "Freelancer", etc.
+  workSchedule        String? // "Integral", "Parcial", "Turno", etc.
+  salaryRangeMin      Float?
+  salaryRangeMax      Float?
+  salaryCurrency      String?      @default("BRL")
+  tags                JobTag[]                        @relation("JobTags")
+  skills              String[]                        @default([])
+  embedding           Unsupported("vector(768)")?
+  interviewScriptJson Json? // Roteiro de entrevista comportamental gerado pela IA
+  tenant              Tenant                          @relation(fields: [tenantId], references: [id])
+  interviews          Interview[]
+  applications        JobApplication[]
+  publishedAt         DateTime? // data de publicação
+  expirationDate      DateTime?
+  isActive            Boolean                         @default(true)
+  applicationUrl      String?
+  metadataJson        Json? // guarda JSON cru da importação externa
+  createdAt           DateTime                        @default(now())
+  updatedAt           DateTime                        @updatedAt
+  FinalScore          FinalScore[]
 }
 
 model Candidate {
@@ -212,12 +213,15 @@ model Interview {
   candidateId   String
   kind          InterviewKind
   status        String        @default("submitted")
+  accessToken   String?       @unique // Token único para acesso à entrevista
   vapiSessionId String?
   transcriptUrl String?
   paralingJson  Json?
   nlpScoresJson Json?
   stageScore    Float?
   reportUrl     String?
+  stateJson     Json? // Estado da entrevista (contadores, tópicos cobertos, hashes de perguntas)
+  stepsJson     Json? // Log resumido dos turnos da entrevista
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   tenant        Tenant        @relation(fields: [tenantId], references: [id])

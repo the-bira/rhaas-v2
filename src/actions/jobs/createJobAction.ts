@@ -2,6 +2,7 @@
 
 import { db } from "@/db";
 import { headers } from "next/headers";
+import { inngest } from "@/lib/inngest/client";
 
 export async function createJobAction(formData: FormData) {
   const headersList = await headers();
@@ -46,6 +47,16 @@ export async function createJobAction(formData: FormData) {
     },
     include: { tags: true },
   });
+
+  // 🎭 Dispara geração automática do roteiro de entrevista comportamental
+  await inngest.send({
+    name: "job/script.generate",
+    data: { jobId: job.id },
+  });
+
+  console.log(
+    `✅ Vaga criada: ${job.id} - Roteiro de entrevista em geração...`
+  );
 
   return job;
 }
