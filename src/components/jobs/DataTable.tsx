@@ -64,7 +64,7 @@ export function DataTable<T extends JobWithTags>({
           <select
             className="border rounded-md px-2 py-1 text-sm"
             value="all"
-            onChange={(e) => {}}
+            onChange={() => {}}
           >
             <option value="all">Todas</option>
             <option value="open">Abertas</option>
@@ -83,7 +83,9 @@ export function DataTable<T extends JobWithTags>({
           <TableHeader className="bg-muted/50">
             <TableRow>
               {columns.map((col) => (
-                <TableHead key={String(col.accessorKey)}>{col.header}</TableHead>
+                <TableHead key={String(col.accessorKey)}>
+                  {col.header}
+                </TableHead>
               ))}
             </TableRow>
           </TableHeader>
@@ -96,7 +98,9 @@ export function DataTable<T extends JobWithTags>({
                 >
                   {columns.map((col) => (
                     <TableCell key={String(col.accessorKey)}>
-                      {col.cell ? col.cell(job) : String(job[col.accessorKey as keyof T])}
+                      {col.cell
+                        ? col.cell(job)
+                        : String(job[col.accessorKey as keyof T])}
                     </TableCell>
                   ))}
                 </TableRow>

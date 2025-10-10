@@ -2,13 +2,13 @@
 
 import { db } from "@/db";
 import { Industry } from '@/generated/prisma';
-import { Prisma, Tenant } from '@/generated/prisma';
-import { vercelBlobUpload } from '@/lib/vercelBlobUpload';
+import { Prisma } from "@/generated/prisma";
+import { vercelBlobUpload } from "@/lib/vercelBlobUpload";
 
-export async function updateTenantInformation(tenantId: string, data: FormData) {
-  console.log(data);
-  console.log("tenantId", tenantId);
-
+export async function updateTenantInformation(
+  tenantId: string,
+  data: FormData
+) {
   const name = data.get("name") as string;
   const about = data.get("about") as string;
   const longDescription = data.get("longDescription") as string;
@@ -33,14 +33,14 @@ export async function updateTenantInformation(tenantId: string, data: FormData) 
     industry: industry ? (industry as Industry) : undefined,
   };
 
-  try{
+  try {
     const exists = await db.tenant.findUnique({
       where: {
         id: tenantId,
       },
     });
 
-    if(!exists){
+    if (!exists) {
       throw new Error("Tenant not found");
     }
 
@@ -55,8 +55,8 @@ export async function updateTenantInformation(tenantId: string, data: FormData) 
       success: true,
       data: updated,
     };
-  } catch(e){
-    console.error(e)
+  } catch (e) {
+    console.error(e);
     return {
       success: false,
       error: e,

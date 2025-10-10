@@ -4,7 +4,6 @@ import { db } from '@/db';
 import { getUserFromKinde } from '@/lib/getUserFromKinde';
 import { vercelBlobUpload } from "@/lib/vercelBlobUpload";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 export async function createCompanyAction(formData: FormData) {
   const userKinde = await getUserFromKinde();

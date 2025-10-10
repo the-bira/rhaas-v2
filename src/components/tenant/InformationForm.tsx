@@ -22,9 +22,8 @@ import {
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { createCompanyAction } from "@/actions/onboarding/createCompanyAction";
 import { toast } from "sonner";
-import { useEffect, useState, useTransition } from "react";
+import { useTransition } from "react";
 import { Industry } from "@/enums/Industry";
 import { MarkdownEditor } from "../utils/MarkdownEditor";
 import {
@@ -36,7 +35,6 @@ import {
 } from "../ui/select";
 import { Tenant } from "@/generated/prisma";
 import { updateTenantInformation } from "@/actions/tenant/updateTenantInformation";
-import { Skeleton } from '../ui/skeleton';
 
 const TenantInformationFormSchema = z.object({
   name: z.string().min(1),
@@ -46,11 +44,12 @@ const TenantInformationFormSchema = z.object({
   logoType: z.enum(["upload", "url"]),
   logoFile: z.instanceof(File).optional(),
   website: z.string().optional(),
-  industry: z.enum(Object.keys(Industry) as [keyof typeof Industry, ...string[]]),
+  industry: z.enum(
+    Object.keys(Industry) as [keyof typeof Industry, ...string[]]
+  ),
 });
 
 export default function TenantInformationForm({ tenant }: { tenant: Tenant }) {
-  
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<z.infer<typeof TenantInformationFormSchema>>({
@@ -92,19 +91,18 @@ export default function TenantInformationForm({ tenant }: { tenant: Tenant }) {
                   }
                 });
 
-                console.log("formData", formData.get("industry"));
-
-                formData.forEach((value, key) => {
-                  console.log("key", key, "value", value);
-                });
-
                 startTransition(async () => {
                   try {
                     const response = await updateTenantInformation(
                       tenant.id,
                       formData
                     );
-                    toast.success("Informações atualizadas!");
+
+                    if (response.success) {
+                      toast.success("Informações atualizadas!");
+                    } else {
+                      toast.error("Erro ao atualizar informações");
+                    }
                   } catch (err) {
                     console.error(err);
                     toast.error("Erro ao atualizar informações");

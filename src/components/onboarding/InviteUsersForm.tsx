@@ -62,7 +62,7 @@ export default function InviteUsersForm() {
     },
   });
 
-  const { control, handleSubmit } = form;
+  const { control } = form;
 
   // ✅ Hook que manipula arrays dinamicamente
   const { fields, append, remove } = useFieldArray({
@@ -70,7 +70,6 @@ export default function InviteUsersForm() {
     name: "users",
   });
 
-  
   return (
     <Card className="w-full max-w-3xl">
       <CardHeader>
@@ -79,18 +78,21 @@ export default function InviteUsersForm() {
 
       <CardContent>
         <Form {...form}>
-          <form action={ async (formData) =>{
-            startTransition(async () => {
-              try {
-                const response = await inviteUsersAction(formData);
-                toast.success("Convites enviados com sucesso!");
-                window.location.href = response.redirectUrl;
-              } catch (error) {
-                console.error(error);
-                toast.error("Erro ao enviar convites");
-              }
-            });
-          }} className="space-y-6">
+          <form
+            action={async (formData) => {
+              startTransition(async () => {
+                try {
+                  const response = await inviteUsersAction(formData);
+                  toast.success("Convites enviados com sucesso!");
+                  window.location.href = response.redirectUrl;
+                } catch (error) {
+                  console.error(error);
+                  toast.error("Erro ao enviar convites");
+                }
+              });
+            }}
+            className="space-y-6"
+          >
             <fieldset className="space-y-6">
               <legend className="text-sm font-medium text-gray-600">
                 Usuários a convidar
@@ -180,11 +182,15 @@ export default function InviteUsersForm() {
             <hr className="my-6" />
 
             {verifyUsersArrayIsNotEmptyOrFilled(fields) ? (
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={isPending}>
                 Enviar convites
               </Button>
             ) : (
-              <Button onClick={redirectToDashboard} className="w-full">
+              <Button
+                onClick={redirectToDashboard}
+                className="w-full"
+                disabled={isPending}
+              >
                 Convidar mais tarde
               </Button>
             )}
