@@ -2,9 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { Job } from "@/generated/prisma";
-import { Eye, Users, Power, PowerOff, Trash2, MoreHorizontal } from "lucide-react";
-import { CandidatesDialog } from "./CandidatesDialog";
+import {
+  Eye,
+  Users,
+  Power,
+  PowerOff,
+  Trash2,
+  MoreHorizontal,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,10 +42,9 @@ interface JobActionsMenuProps {
   onViewCandidates?: (jobId: string) => void;
 }
 
-export function JobActionsMenu({ job, onViewCandidates }: JobActionsMenuProps) {
+export function JobActionsMenu({ job }: JobActionsMenuProps) {
   const [isPending, startTransition] = useTransition();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [candidatesDialogOpen, setCandidatesDialogOpen] = useState(false);
 
   const handlePublish = () => {
     startTransition(async () => {
@@ -100,18 +106,13 @@ export function JobActionsMenu({ job, onViewCandidates }: JobActionsMenuProps) {
             <Eye className="w-4 h-4 mr-2" />
             Visualizar vaga
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => {
-              if (onViewCandidates) {
-                onViewCandidates(job.id);
-              } else {
-                setCandidatesDialogOpen(true);
-              }
-            }}
-          >
-            <Users className="w-4 h-4 mr-2" />
-            Ver candidatos
-          </DropdownMenuItem>          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href={`/job/${job.id}/candidates`}>
+              <Users className="w-4 h-4 mr-2" />
+              Ver candidatos
+            </Link>
+          </DropdownMenuItem>{" "}
+          <DropdownMenuSeparator />
           {!job.publishedAt ? (
             <DropdownMenuItem onClick={handlePublish}>
               <Power className="w-4 h-4 mr-2" />
@@ -143,10 +144,11 @@ export function JobActionsMenu({ job, onViewCandidates }: JobActionsMenuProps) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-          <AlertDialogDescription>
-            Tem certeza que deseja excluir a vaga &quot;{job.title}&quot;? Esta ação não
-            pode ser desfeita e todos os candidatos associados serão perdidos.
-          </AlertDialogDescription>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a vaga &quot;{job.title}&quot;?
+              Esta ação não pode ser desfeita e todos os candidatos associados
+              serão perdidos.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
@@ -159,12 +161,6 @@ export function JobActionsMenu({ job, onViewCandidates }: JobActionsMenuProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <CandidatesDialog
-        job={job}
-        open={candidatesDialogOpen}
-        onOpenChange={setCandidatesDialogOpen}
-      />
     </>
   );
 }

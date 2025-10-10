@@ -42,20 +42,60 @@ export async function GET(
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 
-    // Buscar score se jobId fornecido
+    // Buscar score e entrevista se jobId fornecido
     let score = null;
+    let interview = null;
+
     if (jobId) {
-      score = await db.finalScore.findFirst({
-        where: {
-          candidateId,
-          jobId,
-        },
-      });
+      [score, interview] = await Promise.all([
+        db.finalScore.findFirst({
+          where: {
+            candidateId,
+            jobId,
+          },
+        }),
+        db.interview.findFirst({
+          where: {
+            candidateId,
+            jobId,
+            kind: "BEHAVIORAL",
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+          include: {
+            tenant: false,
+            job: false,
+            candidate: false,
+          },
+        }),
+      ]);
+
+      // Se tem entrevista completada, buscar análise
+      if (interview && interview.status === "completed") {
+        const assessment = await db.assessmentResult.findFirst({
+          where: {
+            candidateId,
+            model: "BIGFIVE",
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+
+        if (assessment) {
+          interview = {
+            ...interview,
+            analysis: assessment.rawJson,
+          } as never;
+        }
+      }
     }
 
     return NextResponse.json({
       ...candidate,
       score: score || null,
+      interview: interview || null,
     });
   } catch (error) {
     console.error("Erro ao buscar candidato:", error);

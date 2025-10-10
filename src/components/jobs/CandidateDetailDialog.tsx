@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -25,6 +26,85 @@ import {
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
+interface ResumeData {
+  personalInfo?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    linkedin?: string;
+    location?: string;
+  };
+  summary?: string;
+  experiences?: Array<{
+    company: string;
+    position: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }>;
+  education?: Array<{
+    institution: string;
+    degree: string;
+    field?: string;
+    startDate?: string;
+    endDate?: string;
+  }>;
+  skills?: string[];
+  languages?: Array<{
+    language: string;
+    proficiency: string;
+  }>;
+}
+
+interface CandidateData {
+  id: string;
+  name: string | null;
+  email: string | null;
+  linkedinUrl: string | null;
+  resumeUrl: string | null;
+  resumeJson: unknown;
+  score: {
+    resumeScore: number;
+    detailsJson: {
+      strengths?: string[];
+      gaps?: string[];
+      recommendation?: string;
+    };
+  } | null;
+  interview: {
+    id: string;
+    status: string;
+    analysis?: {
+      summary?: string;
+      bigFive?: Record<string, { score: number; description: string }>;
+      disc?: {
+        dominance: number;
+        influence: number;
+        steadiness: number;
+        compliance: number;
+        profileDescription: string;
+      };
+      motivations?: {
+        mainDrivers?: string[];
+        emotionalMaturity?: {
+          score: number;
+          description: string;
+        };
+      };
+      risks?: Array<{ factor: string; impact: string }>;
+      leadershipPotential?: {
+        level: string;
+        strengths?: string[];
+        developmentAreas?: string[];
+      };
+      verdict?: {
+        recommendation: string;
+        justification: string;
+      };
+    };
+  } | null;
+}
+
 interface CandidateDetailDialogProps {
   candidateId: string;
   jobId: string;
@@ -38,8 +118,7 @@ export function CandidateDetailDialog({
   open,
   onOpenChange,
 }: CandidateDetailDialogProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [candidate, setCandidate] = useState<any>(null);
+  const [candidate, setCandidate] = useState<CandidateData | null>(null);
   const [loading, setLoading] = useState(false);
 
   const loadCandidateDetails = React.useCallback(async () => {
@@ -63,16 +142,13 @@ export function CandidateDetailDialog({
     }
   }, [open, candidateId, loadCandidateDetails]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const resumeData = candidate?.resumeJson as any;
+  const resumeData = candidate?.resumeJson as ResumeData | undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>
-            {candidate?.name || "Candidato"}
-          </DialogTitle>
+          <DialogTitle>{candidate?.name || "Candidato"}</DialogTitle>
           <DialogDescription>
             Detalhes completos e análise de compatibilidade
           </DialogDescription>
@@ -83,10 +159,20 @@ export function CandidateDetailDialog({
             <Loader2 className="w-6 h-6 animate-spin" />
           </div>
         ) : (
-          <Tabs defaultValue="info" className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid w-full grid-cols-3">
+          <Tabs
+            defaultValue="info"
+            className="flex-1 flex flex-col overflow-hidden"
+          >
+            <TabsList
+              className={`grid w-full ${
+                candidate?.interview ? "grid-cols-4" : "grid-cols-3"
+              }`}
+            >
               <TabsTrigger value="info">Informações</TabsTrigger>
-              <TabsTrigger value="analysis">Análise IA</TabsTrigger>
+              <TabsTrigger value="analysis">Análise Currículo</TabsTrigger>
+              {candidate?.interview && (
+                <TabsTrigger value="interview">Entrevista</TabsTrigger>
+              )}
               <TabsTrigger value="resume">Currículo PDF</TabsTrigger>
             </TabsList>
 
@@ -152,34 +238,42 @@ export function CandidateDetailDialog({
                   )}
 
                   {/* Experiências */}
-                  {resumeData?.experiences && resumeData.experiences.length > 0 && (
-                    <>
-                      <div>
-                        <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                          <Briefcase className="w-5 h-5" />
-                          Experiência Profissional
-                        </h3>
-                        <div className="space-y-4">
-                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                          {resumeData.experiences.map((exp: Record<string, any>, idx: number) => (
-                            <div key={idx} className="pl-4 border-l-2 border-muted">
-                              <p className="font-medium">{exp.position}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {exp.company}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {exp.startDate} - {exp.endDate || "Atual"}
-                              </p>
-                              {exp.description && (
-                                <p className="text-sm mt-2">{exp.description}</p>
-                              )}
-                            </div>
-                          ))}
+                  {resumeData?.experiences &&
+                    resumeData.experiences.length > 0 && (
+                      <>
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                            <Briefcase className="w-5 h-5" />
+                            Experiência Profissional
+                          </h3>
+                          <div className="space-y-4">
+                            {}
+                            {resumeData.experiences.map(
+                              (exp: Record<string, any>, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className="pl-4 border-l-2 border-muted"
+                                >
+                                  <p className="font-medium">{exp.position}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {exp.company}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {exp.startDate} - {exp.endDate || "Atual"}
+                                  </p>
+                                  {exp.description && (
+                                    <p className="text-sm mt-2">
+                                      {exp.description}
+                                    </p>
+                                  )}
+                                </div>
+                              )
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <Separator />
-                    </>
-                  )}
+                        <Separator />
+                      </>
+                    )}
 
                   {/* Formação */}
                   {resumeData?.education && resumeData.education.length > 0 && (
@@ -190,21 +284,26 @@ export function CandidateDetailDialog({
                           Formação Acadêmica
                         </h3>
                         <div className="space-y-3">
-                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                          {resumeData.education.map((edu: Record<string, any>, idx: number) => (
-                            <div key={idx} className="pl-4 border-l-2 border-muted">
-                              <p className="font-medium">{edu.degree}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {edu.institution}
-                              </p>
-                              {edu.field && (
-                                <p className="text-sm">{edu.field}</p>
-                              )}
-                              <p className="text-xs text-muted-foreground">
-                                {edu.startDate} - {edu.endDate}
-                              </p>
-                            </div>
-                          ))}
+                          {}
+                          {resumeData.education.map(
+                            (edu: Record<string, any>, idx: number) => (
+                              <div
+                                key={idx}
+                                className="pl-4 border-l-2 border-muted"
+                              >
+                                <p className="font-medium">{edu.degree}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {edu.institution}
+                                </p>
+                                {edu.field && (
+                                  <p className="text-sm">{edu.field}</p>
+                                )}
+                                <p className="text-xs text-muted-foreground">
+                                  {edu.startDate} - {edu.endDate}
+                                </p>
+                              </div>
+                            )
+                          )}
                         </div>
                       </div>
                       <Separator />
@@ -219,11 +318,13 @@ export function CandidateDetailDialog({
                           Habilidades
                         </h3>
                         <div className="flex flex-wrap gap-2">
-                          {resumeData.skills.map((skill: string, idx: number) => (
-                            <Badge key={idx} variant="secondary">
-                              {skill}
-                            </Badge>
-                          ))}
+                          {resumeData.skills.map(
+                            (skill: string, idx: number) => (
+                              <Badge key={idx} variant="secondary">
+                                {skill}
+                              </Badge>
+                            )
+                          )}
                         </div>
                       </div>
                       <Separator />
@@ -237,13 +338,15 @@ export function CandidateDetailDialog({
                         <Languages className="w-5 h-5" />
                         Idiomas
                       </h3>
-                        <div className="flex flex-wrap gap-2">
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        {resumeData.languages.map((lang: Record<string, any>, idx: number) => (
-                          <Badge key={idx} variant="outline">
-                            {lang.language} - {lang.proficiency}
-                          </Badge>
-                        ))}
+                      <div className="flex flex-wrap gap-2">
+                        {}
+                        {resumeData.languages.map(
+                          (lang: Record<string, any>, idx: number) => (
+                            <Badge key={idx} variant="outline">
+                              {lang.language} - {lang.proficiency}
+                            </Badge>
+                          )
+                        )}
                       </div>
                     </div>
                   )}
@@ -251,7 +354,10 @@ export function CandidateDetailDialog({
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="analysis" className="flex-1 overflow-y-auto mt-4">
+            <TabsContent
+              value="analysis"
+              className="flex-1 overflow-y-auto mt-4"
+            >
               <ScrollArea className="h-[500px] pr-4">
                 {candidate?.score ? (
                   <div className="space-y-6">
@@ -260,7 +366,7 @@ export function CandidateDetailDialog({
                       <h3 className="text-lg font-semibold mb-4">
                         Score de Compatibilidade
                       </h3>
-                        <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4">
                         <div className="text-4xl font-bold">
                           {Math.round(candidate?.score?.resumeScore || 0)}
                         </div>
@@ -339,6 +445,338 @@ export function CandidateDetailDialog({
                 )}
               </ScrollArea>
             </TabsContent>
+
+            {/* Tab de Entrevista */}
+            {candidate?.interview && (
+              <TabsContent
+                value="interview"
+                className="flex-1 overflow-y-auto mt-4"
+              >
+                <ScrollArea className="h-[500px] pr-4">
+                  {candidate.interview.analysis ? (
+                    <div className="space-y-6">
+                      {/* Resumo */}
+                      {candidate.interview.analysis.summary && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3">
+                            📝 Resumo
+                          </h3>
+                          <p className="text-sm text-muted-foreground bg-muted p-4 rounded-md">
+                            {candidate.interview.analysis.summary}
+                          </p>
+                        </div>
+                      )}
+
+                      <Separator />
+
+                      {/* Big Five */}
+                      {candidate.interview.analysis.bigFive && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-4">
+                            🧠 Big Five (OCEAN)
+                          </h3>
+                          <div className="space-y-3">
+                            {Object.entries(
+                              candidate.interview.analysis.bigFive
+                            ).map(([trait, data]: [string, any]) => (
+                              <div key={trait} className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium capitalize">
+                                    {trait === "openness" && "Abertura"}
+                                    {trait === "conscientiousness" &&
+                                      "Conscienciosidade"}
+                                    {trait === "extraversion" && "Extroversão"}
+                                    {trait === "agreeableness" && "Amabilidade"}
+                                    {trait === "neuroticism" && "Neuroticismo"}
+                                  </span>
+                                  <span className="text-sm font-bold">
+                                    {data.score}/100
+                                  </span>
+                                </div>
+                                <Progress value={data.score} className="h-2" />
+                                <p className="text-xs text-muted-foreground">
+                                  {data.description}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <Separator />
+
+                      {/* DISC */}
+                      {candidate.interview.analysis.disc && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-4">
+                            🎯 DISC
+                          </h3>
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <span className="text-sm font-medium">
+                                  Dominância
+                                </span>
+                                <Progress
+                                  value={
+                                    candidate.interview.analysis.disc.dominance
+                                  }
+                                  className="h-2 mt-1"
+                                />
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium">
+                                  Influência
+                                </span>
+                                <Progress
+                                  value={
+                                    candidate.interview.analysis.disc.influence
+                                  }
+                                  className="h-2 mt-1"
+                                />
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium">
+                                  Estabilidade
+                                </span>
+                                <Progress
+                                  value={
+                                    candidate.interview.analysis.disc.steadiness
+                                  }
+                                  className="h-2 mt-1"
+                                />
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium">
+                                  Conformidade
+                                </span>
+                                <Progress
+                                  value={
+                                    candidate.interview.analysis.disc.compliance
+                                  }
+                                  className="h-2 mt-1"
+                                />
+                              </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md mt-2">
+                              <strong>Perfil:</strong>{" "}
+                              {
+                                candidate.interview.analysis.disc
+                                  .profileDescription
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      <Separator />
+
+                      {/* Motivações */}
+                      {candidate.interview.analysis.motivations && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3">
+                            💡 Motivações
+                          </h3>
+                          <div className="space-y-3">
+                            <div>
+                              <p className="text-sm font-medium mb-2">
+                                Principais Drivers:
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {candidate.interview.analysis.motivations.mainDrivers?.map(
+                                  (driver: string, idx: number) => (
+                                    <Badge key={idx} variant="default">
+                                      {driver}
+                                    </Badge>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                            {candidate.interview.analysis.motivations
+                              .emotionalMaturity && (
+                              <div>
+                                <p className="text-sm font-medium mb-1">
+                                  Maturidade Emocional:
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <Progress
+                                    value={
+                                      candidate.interview.analysis.motivations
+                                        .emotionalMaturity.score
+                                    }
+                                    className="h-2 flex-1"
+                                  />
+                                  <span className="text-sm font-bold">
+                                    {
+                                      candidate.interview.analysis.motivations
+                                        .emotionalMaturity.score
+                                    }
+                                    /100
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {
+                                    candidate.interview.analysis.motivations
+                                      .emotionalMaturity.description
+                                  }
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <Separator />
+
+                      {/* Riscos */}
+                      {candidate.interview.analysis.risks &&
+                        candidate.interview.analysis.risks.length > 0 && (
+                          <div>
+                            <h3 className="text-lg font-semibold mb-3 text-orange-600">
+                              ⚠️ Fatores de Risco
+                            </h3>
+                            <ul className="space-y-2">
+                              { }
+                            {candidate.interview.analysis.risks.map(
+                                (risk: any, idx: number) => (
+                                  <li
+                                    key={idx}
+                                    className="text-sm flex gap-2 items-start"
+                                  >
+                                    <Badge
+                                      variant={
+                                        risk.impact === "alto"
+                                          ? "destructive"
+                                          : risk.impact === "médio"
+                                          ? "default"
+                                          : "outline"
+                                      }
+                                      className="text-xs"
+                                    >
+                                      {risk.impact}
+                                    </Badge>
+                                    <span>{risk.factor}</span>
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        )}
+
+                      <Separator />
+
+                      {/* Potencial de Liderança */}
+                      {candidate.interview.analysis.leadershipPotential && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3">
+                            👔 Potencial de Liderança
+                          </h3>
+                          <div className="space-y-3">
+                            <Badge
+                              variant={
+                                candidate.interview.analysis.leadershipPotential
+                                  .level === "alto"
+                                  ? "default"
+                                  : candidate.interview.analysis
+                                      .leadershipPotential.level === "médio"
+                                  ? "secondary"
+                                  : "outline"
+                              }
+                            >
+                              Nível:{" "}
+                              {
+                                candidate.interview.analysis.leadershipPotential
+                                  .level
+                              }
+                            </Badge>
+                            <div>
+                              <p className="text-sm font-medium mb-2 text-green-600">
+                                Pontos Fortes:
+                              </p>
+                              <ul className="space-y-1 text-sm">
+                                {candidate.interview.analysis.leadershipPotential.strengths?.map(
+                                  (s: string, idx: number) => (
+                                    <li key={idx}>✓ {s}</li>
+                                  )
+                                )}
+                              </ul>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium mb-2 text-orange-600">
+                                Áreas de Desenvolvimento:
+                              </p>
+                              <ul className="space-y-1 text-sm">
+                                {candidate.interview.analysis.leadershipPotential.developmentAreas?.map(
+                                  (a: string, idx: number) => (
+                                    <li key={idx}>→ {a}</li>
+                                  )
+                                )}
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <Separator />
+
+                      {/* Veredicto Final */}
+                      {candidate.interview.analysis.verdict && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3">
+                            🎯 Veredicto Final
+                          </h3>
+                          <div className="space-y-3">
+                            <Badge
+                              variant={
+                                candidate.interview.analysis.verdict
+                                  .recommendation === "Altamente recomendado"
+                                  ? "default"
+                                  : candidate.interview.analysis.verdict
+                                      .recommendation ===
+                                    "Recomendado com ressalvas"
+                                  ? "secondary"
+                                  : "destructive"
+                              }
+                              className="text-sm"
+                            >
+                              {
+                                candidate.interview.analysis.verdict
+                                  .recommendation
+                              }
+                            </Badge>
+                            <p className="text-sm text-muted-foreground bg-muted p-4 rounded-md">
+                              {
+                                candidate.interview.analysis.verdict
+                                  .justification
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <p className="text-lg font-semibold mb-2">
+                        Status: {candidate.interview.status}
+                      </p>
+                      {candidate.interview.status === "scheduled" && (
+                        <p className="text-sm">
+                          Aguardando candidato iniciar entrevista
+                        </p>
+                      )}
+                      {candidate.interview.status === "in_progress" && (
+                        <p className="text-sm">Entrevista em andamento...</p>
+                      )}
+                      {candidate.interview.status === "processing" && (
+                        <p className="text-sm">
+                          Processando análise da entrevista...
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </ScrollArea>
+              </TabsContent>
+            )}
 
             <TabsContent value="resume" className="flex-1 overflow-hidden mt-4">
               {candidate?.resumeUrl ? (
