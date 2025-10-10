@@ -1,6 +1,5 @@
 import { Agent } from "@/components/interview/Agent";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 
 export default async function InterviewPage() {
   return (
