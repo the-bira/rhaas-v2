@@ -1,5 +1,5 @@
 import { WorkModel } from '@/enums/WorkModel';
-import { Job, Tenant } from '@/generated/prisma';
+import { Job, Tenant } from "@prisma/client";
 import { Building2, MapPin, Globe2 } from "lucide-react";
 
 type JobWithTenant = Job & { tenant: Tenant };

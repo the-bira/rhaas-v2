@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { CompanySwitcher } from "./CompanySwitcher";
-import { Tenant } from "@/generated/prisma";
+import { Tenant } from "@prisma/client";
 
 const items = [
   { title: "Dashboard", href: "/", icon: <HomeIcon /> },

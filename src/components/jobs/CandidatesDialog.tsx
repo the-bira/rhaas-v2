@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Job } from "@/generated/prisma";
+import { Job } from "@prisma/client";
 import { CandidatesDataTable } from "./CandidatesDataTable";
 import { Loader2 } from "lucide-react";
 import { CandidateDetailDialog } from "./CandidateDetailDialog";

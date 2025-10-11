@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { ChevronsUpDown, Building2 } from "lucide-react";
-import { Tenant } from "@/generated/prisma";
+import { Tenant } from "@prisma/client";
 
 import {
   DropdownMenu,

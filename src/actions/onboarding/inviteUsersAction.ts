@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { Role } from "@/generated/prisma";
+import { Role } from "@prisma/client";
 import { getUserFromKinde } from "@/lib/getUserFromKinde";
 import { headers } from "next/headers";
 

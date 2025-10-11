@@ -26,7 +26,7 @@ import {
 import { ChevronLeft, ChevronRight, Eye, FileText, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Candidate } from "@/generated/prisma";
+import { Candidate } from "@prisma/client";
 import { toast } from "sonner";
 import { deleteCandidateAction } from "@/actions/candidate/deleteCandidateAction";
 

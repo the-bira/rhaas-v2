@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { Industry } from '@/generated/prisma';
-import { Prisma } from "@/generated/prisma";
+import { Industry } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { vercelBlobUpload } from "@/lib/vercelBlobUpload";
 
 export async function updateTenantInformation(

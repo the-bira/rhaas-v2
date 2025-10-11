@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Linkedin, Twitter, Link as LinkIcon } from "lucide-react";
-import { Job, Tenant } from '@/generated/prisma';
+import { Job, Tenant } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 

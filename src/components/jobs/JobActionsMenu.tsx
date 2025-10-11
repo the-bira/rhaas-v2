@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Job } from "@/generated/prisma";
+import { Job } from "@prisma/client";
 import {
   Eye,
   Users,

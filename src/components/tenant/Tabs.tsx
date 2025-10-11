@@ -1,7 +1,7 @@
 // src/components/tenant/Tabs.tsx
 "use client";
 
-import { Tenant } from '@/generated/prisma';
+import { Tenant } from "@prisma/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";

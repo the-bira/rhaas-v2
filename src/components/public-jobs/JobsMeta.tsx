@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Job, JobTag } from '@/generated/prisma';
+import { Job, JobTag } from "@prisma/client";
 
 type JobWithTags = Job & { tags: JobTag[] };
 

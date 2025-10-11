@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useTransition } from "react";
-import { Job, JobTag } from "@/generated/prisma";
+import { Job, JobTag } from "@prisma/client";
 import { WorkModel } from "@/enums/WorkModel";
 import { Form } from "../ui/form";
 import { JobInformationForm } from "./JobInformationForm";

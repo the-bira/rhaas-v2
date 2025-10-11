@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { Job, JobTag } from "@/generated/prisma";
+import { Job, JobTag } from "@prisma/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { WorkModel } from "@/enums/WorkModel";

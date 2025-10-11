@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { Tenant } from "@/generated/prisma";
+import { Tenant } from "@prisma/client";
 import { updateTenantInformation } from "@/actions/tenant/updateTenantInformation";
 
 const TenantInformationFormSchema = z.object({

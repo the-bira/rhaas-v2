@@ -9,7 +9,7 @@ import {
   matchCandidateToJob,
   type ParsedResume,
 } from "@/lib/geminiService";
-import type { Prisma } from "@/generated/prisma";
+import type { Prisma } from "@prisma/client";
 import { parsePdf } from "@/lib/pdfParser";
 
 /**

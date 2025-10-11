@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, Plus, ChevronLeft, ChevronRight } from "lucide-react";
-import { Job, JobTag } from "@/generated/prisma";
+import { Job, JobTag } from "@prisma/client";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
