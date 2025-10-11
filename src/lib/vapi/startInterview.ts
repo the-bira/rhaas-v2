@@ -33,16 +33,20 @@ export async function startInterviewSession(params: {
   candidateName: string;
   phoneNumber?: string;
 }): Promise<VapiCallResponse> {
-  const { interviewId, script, candidateName, phoneNumber } = params;
+  const { interviewId, candidateName, phoneNumber } = params;
 
-  // Configurar assistente
-  const assistant = createInterviewAssistant(script, candidateName);
+  // Usar assistente pré-criado no dashboard Vapi
+  const assistantId = process.env.VAPI_ASSISTANT_ID;
+  if (!assistantId) {
+    throw new Error("VAPI_ASSISTANT_ID não está configurado");
+  }
 
   // Preparar payload da requisição
   const payload: VapiCreateCallPayload = {
-    assistant,
+    assistantId,
     metadata: {
       interviewId,
+      candidateName,
       type: "behavioral_interview",
     },
   };
@@ -73,7 +77,7 @@ export async function startInterviewSession(params: {
   const data: VapiCallResponse = await response.json();
 
   console.log(`✅ Sessão Vapi criada: ${data.id}`);
-  
+
   return data;
 }
 
@@ -86,10 +90,13 @@ export async function createWebCallLink(params: {
   script: InterviewScript;
   candidateName: string;
 }): Promise<{ callId: string; webUrl: string }> {
-  const { interviewId, script, candidateName } = params;
+  const { interviewId, candidateName } = params;
 
-  // Configurar assistente
-  const assistant = createInterviewAssistant(script, candidateName);
+  // Usar assistente pré-criado no dashboard Vapi
+  const assistantId = process.env.VAPI_ASSISTANT_ID;
+  if (!assistantId) {
+    throw new Error("VAPI_ASSISTANT_ID não está configurado");
+  }
 
   // Criar chamada web
   const apiKey = getVapiApiKey();
@@ -100,9 +107,10 @@ export async function createWebCallLink(params: {
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      assistant,
+      assistantId,
       metadata: {
         interviewId,
+        candidateName,
         type: "behavioral_interview",
       },
     }),
@@ -163,7 +171,8 @@ export async function endCall(callId: string): Promise<void> {
 // ============================================================================
 
 interface VapiCreateCallPayload {
-  assistant: {
+  assistantId?: string;
+  assistant?: {
     name: string;
     model: {
       provider: string;
@@ -186,8 +195,9 @@ interface VapiCreateCallPayload {
   };
   metadata?: {
     interviewId: string;
+    candidateName?: string;
     type: string;
-    [key: string]: string;
+    [key: string]: string | undefined;
   };
   phoneNumber?: string;
   phoneNumberId?: string;

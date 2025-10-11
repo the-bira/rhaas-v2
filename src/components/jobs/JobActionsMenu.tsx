@@ -107,7 +107,7 @@ export function JobActionsMenu({ job }: JobActionsMenuProps) {
             Visualizar vaga
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href={`/job/${job.id}/candidates`}>
+            <Link href={`/jobs/${job.id}/candidates`}>
               <Users className="w-4 h-4 mr-2" />
               Ver candidatos
             </Link>
