@@ -3,25 +3,21 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { db } from "@/db-edge";
+import { getUserFromKinde } from "@/lib/getUserFromKinde";
 
 export async function middleware(req: NextRequest) {
   if (req.nextUrl.pathname.startsWith("/api/inngest")) {
     return NextResponse.next();
   }
 
-  const { isAuthenticated, getUser } = getKindeServerSession();
+  const { isAuthenticated } = getKindeServerSession();
   const authed = await isAuthenticated();
 
   if (!authed) {
     return NextResponse.redirect(new URL("/sign-in", req.url));
   }
 
-  const userKinde = await getUser();
-  const user = await db.user.findUnique({
-    where: {
-      kindeId: userKinde?.id,
-    },
-  });
+  const user = await getUserFromKinde();
 
   if (!user) {
     return NextResponse.redirect(new URL("/sign-in", req.url));
