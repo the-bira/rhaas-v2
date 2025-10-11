@@ -27,5 +27,9 @@ export const { GET, POST, PUT } = serve({
     generateInterviewScriptFunction,
     analyzeInterviewFunction,
   ],
+  streaming: "allow",
+  logLevel: "info",
 });
+
+export const runtime = "nodejs";
 

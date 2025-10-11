@@ -9,5 +9,6 @@ import { Inngest } from "inngest";
 export const inngest = new Inngest({
   id: "rhaas-v2",
   name: "RHaaS - Recrutamento Inteligente",
+  eventKey: process.env.INNGEST_EVENT_KEY,
 });
 
