@@ -4,7 +4,7 @@
  * Cria uma sessão de chamada com o assistente entrevistador configurado
  */
 
-import { createInterviewAssistant, getVapiApiKey } from "./interviewAgent";
+import { getVapiApiKey } from "./interviewAgent";
 import type { InterviewScript } from "@/types/interview.index";
 
 /**
