@@ -129,6 +129,9 @@ export async function getInterviewForCandidateAction(
         select: {
           title: true,
           description: true,
+          requirements: true,
+          tags: true,
+          interviewScriptJson: true,
         },
       },
       candidate: {
@@ -155,6 +158,15 @@ export async function getInterviewForCandidateAction(
       vapiSessionId: interview.vapiSessionId,
       jobTitle: interview.job.title,
       candidateName: interview.candidate.name,
+      jobData: {
+        description: interview.job.description,
+        requirements: interview.job.requirements,
+        tags: interview.job.tags.map((tag) => tag.tag),
+        interviewScriptJson: interview.job.interviewScriptJson,
+      },
+      candidateData: {
+        email: interview.candidate.email,
+      },
     },
   };
 }
@@ -183,6 +195,15 @@ type GetInterviewResult =
         vapiSessionId: string | null;
         jobTitle: string;
         candidateName: string | null;
+        jobData: {
+          description: string | null;
+          requirements: string | null;
+          tags: string[];
+          interviewScriptJson: unknown;
+        };
+        candidateData: {
+          email: string | null;
+        };
       };
     }
   | {

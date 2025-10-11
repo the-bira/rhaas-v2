@@ -18,6 +18,8 @@ export default async function InterviewPage({
 
   // Buscar dados da entrevista usando token de acesso
   const result = await getInterviewForCandidateAction(accessToken);
+  
+  console.log("🔍 Resultado da busca da entrevista:", result);
 
   if (!result.success) {
     return (
@@ -44,6 +46,8 @@ export default async function InterviewPage({
       candidateName={result.interview.candidateName || "Candidato"}
       initialStatus={result.interview.status}
       initialSessionId={result.interview.vapiSessionId}
+      jobData={result.interview.jobData}
+      candidateData={result.interview.candidateData}
     />
   );
 }

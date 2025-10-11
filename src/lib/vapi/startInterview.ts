@@ -100,6 +100,7 @@ export async function createWebCallLink(params: {
 
   // Criar chamada web
   const apiKey = getVapiApiKey();
+  console.log("🔑 Vapi API Key:", apiKey.substring(0, 10) + "...");
   const response = await fetch("https://api.vapi.ai/call/web", {
     method: "POST",
     headers: {

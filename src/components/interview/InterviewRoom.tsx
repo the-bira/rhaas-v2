@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Agent } from "./Agent";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,24 @@ import { toast } from "sonner";
 import { startInterviewSessionAction } from "@/actions/candidate/startInterviewSessionAction";
 import { vapi } from "@/lib/vapi/vapi.sdk";
 
+// Debug: verificar se vapi está disponível
+console.log("🔧 Vapi SDK importado:", !!vapi);
+
 interface InterviewRoomProps {
   accessToken: string;
   jobTitle: string;
   candidateName: string;
   initialStatus: string;
   initialSessionId: string | null;
+  jobData?: {
+    description?: string | null;
+    requirements?: string | null;
+    tags?: string[];
+    interviewScriptJson?: unknown;
+  };
+  candidateData?: {
+    email?: string | null;
+  };
 }
 
 export function InterviewRoom({
@@ -23,19 +35,31 @@ export function InterviewRoom({
   candidateName,
   initialStatus,
   initialSessionId,
+  jobData,
+  candidateData,
 }: InterviewRoomProps) {
   const [status, setStatus] = useState<string>(initialStatus);
-  const [sessionId, setSessionId] = useState<string | null>(initialSessionId);
+  const [, setSessionId] = useState<string | null>(initialSessionId);
   const [isStarting, setIsStarting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [callActive, setCallActive] = useState(false);
 
-  // Reconectar se sessão já existe
-  useEffect(() => {
-    if (sessionId && initialStatus === "in_progress") {
-      connectToVapi(sessionId);
-    }
-  }, [sessionId, initialStatus]);
+  // Debug: log dos dados recebidos
+  console.log("🎯 InterviewRoom props:", {
+    accessToken: accessToken ? "✅ Presente" : "❌ Ausente",
+    jobTitle,
+    candidateName,
+    initialStatus,
+    initialSessionId: initialSessionId ? "✅ Presente" : "❌ Ausente",
+  });
+
+  // Não reconectar automaticamente - usuário deve clicar "Start Interview"
+  // useEffect(() => {
+  //   if (sessionId && initialStatus === "in_progress" && sessionId !== "null") {
+  //     console.log("🔄 Reconectando à sessão existente:", sessionId);
+  //     connectToVapi(sessionId);
+  //   }
+  // }, [sessionId, initialStatus]);
 
   async function handleStartInterview() {
     setIsStarting(true);
@@ -64,8 +88,74 @@ export function InterviewRoom({
 
   async function connectToVapi(sessionId: string) {
     try {
-      // Iniciar chamada Vapi
-      await vapi.start(sessionId);
+      console.log("🔗 Conectando ao Vapi com sessionId:", sessionId);
+      console.log(
+        "🔑 Vapi token disponível:",
+        !!process.env.NEXT_PUBLIC_VAPI_WEB_TOKEN
+      );
+      console.log("🔧 Vapi instance:", !!vapi);
+      console.log(
+        "🔧 Vapi assistantId:",
+        process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID
+      );
+
+      // Verificar se vapi está disponível
+      if (!vapi) {
+        throw new Error("Vapi SDK não foi inicializado corretamente");
+      }
+
+      // Log para debug
+      console.log("🎯 Iniciando entrevista com:", {
+        candidateName,
+        jobTitle,
+        sessionId,
+      });
+
+      // Diagnóstico
+      console.log(
+        "🧠 Tipo do sessionId:",
+        typeof sessionId,
+        "valor:",
+        sessionId
+      );
+      console.log("🧱 vapi.start existe:", typeof vapi.start === "function");
+
+      // Listener de erro global
+      vapi.on("error", (err) => {
+        console.error("🚨 Erro global Vapi:", err);
+        console.error("🚨 Detalhes do erro:", JSON.stringify(err, null, 2));
+      });
+
+      // Iniciar chamada Vapi com assistantId correto
+      const assistantId =
+        process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID ||
+        "3900d262-ea58-4d12-ae5a-06090b4485b6";
+
+      // Usar dados das props
+      console.log("🔍 Usando dados das props:", { jobData, candidateData });
+
+      const context = {
+        job: {
+          title: jobTitle,
+          description: jobData?.description || "",
+          requirements: jobData?.requirements || "",
+          tags: jobData?.tags || [],
+        },
+        candidate: {
+          name: candidateName,
+          email: candidateData?.email || "",
+        },
+        script: jobData?.interviewScriptJson || {},
+      };
+
+      await vapi.start(assistantId, {
+        variableValues: {
+          context: JSON.stringify(context),
+          candidateName,
+          jobTitle,
+          sessionId,
+        },
+      });
 
       // Listeners de eventos
       vapi.on("call-start", () => {
@@ -134,7 +224,8 @@ export function InterviewRoom({
             <strong>{jobTitle}</strong>.
           </p>
           <p className="text-sm text-muted-foreground">
-            Nossa equipe está analisando sua entrevista e entraremos em contato em breve.
+            Nossa equipe está analisando sua entrevista e entraremos em contato
+            em breve.
           </p>
         </div>
       </div>
@@ -149,12 +240,15 @@ export function InterviewRoom({
           <div className="text-6xl">❌</div>
           <h1 className="text-2xl font-bold">Entrevista Cancelada</h1>
           <p className="text-muted-foreground max-w-md">
-            Esta entrevista foi cancelada. Entre em contato com o recrutador para mais informações.
+            Esta entrevista foi cancelada. Entre em contato com o recrutador
+            para mais informações.
           </p>
         </div>
       </div>
     );
   }
+
+  console.log("🎨 Renderizando InterviewRoom com status:", status);
 
   return (
     <div className="flex flex-col gap-4">
@@ -178,8 +272,13 @@ export function InterviewRoom({
               <h3 className="font-semibold">📋 Instruções:</h3>
               <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
                 <li>A entrevista durará aproximadamente 15 minutos</li>
-                <li>Fale naturalmente, como se estivesse conversando com um recrutador</li>
-                <li>Cite exemplos concretos e situações reais que você viveu</li>
+                <li>
+                  Fale naturalmente, como se estivesse conversando com um
+                  recrutador
+                </li>
+                <li>
+                  Cite exemplos concretos e situações reais que você viveu
+                </li>
                 <li>Seja honesto e autêntico em suas respostas</li>
                 <li>Certifique-se de que seu microfone está funcionando</li>
               </ul>
@@ -207,12 +306,22 @@ export function InterviewRoom({
       )}
 
       {/* Sala de Entrevista (quando iniciada) */}
-      {(callActive || isStarting) && (
+      {(callActive || isStarting || status === "in_progress") && (
         <>
           <div className="relative flex flex-col md:flex-row gap-4 w-full min-h-[60vh] md:min-h-[70vh]">
             <Agent type="user" name={candidateName} />
             <Agent type="ai" />
           </div>
+
+          {/* Botão Reconectar (se status in_progress mas não conectado) */}
+          {status === "in_progress" && !callActive && !isStarting && (
+            <div className="flex justify-center mb-4">
+              <Button onClick={() => connectToVapi("")} className="gap-2">
+                <Mic className="w-4 h-4" />
+                Reconectar à Entrevista
+              </Button>
+            </div>
+          )}
 
           {/* Controles */}
           <div className="flex items-center justify-center gap-4 mt-4">
