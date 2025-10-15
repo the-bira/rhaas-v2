@@ -30,11 +30,19 @@ export async function POST(req: Request) {
     console.log("🗣️ Texto transcrito:", text);
 
     return NextResponse.json({ text });
-  } catch (err: any) {
-    console.error("❌ STT error:", err.message || err);
-    return NextResponse.json({
-      error: "STT failed",
-      details: err.message,
-    }, { status: 500 });
+  } catch (err) {
+    const errorMsg =
+      err && typeof err === "object" && "message" in err && typeof (err as { message?: unknown }).message === "string"
+        ? (err as { message: string }).message
+        : String(err);
+
+    console.error("❌ STT error:", errorMsg);
+    return NextResponse.json(
+      {
+        error: "STT failed",
+        details: errorMsg,
+      },
+      { status: 500 }
+    );
   }
 }
