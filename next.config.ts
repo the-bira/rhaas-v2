@@ -1,13 +1,22 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   turbopack: {
     root: "./",
   },
-  // Tratar pdf-parse como pacote externo (não fazer bundle)
-  // Isso evita que o código de teste do pdf-parse seja executado
   serverExternalPackages: ["pdf-parse"],
+
+  // ✅ Multi-Zones: Redireciona /interview para rhaas-interview (opcional)
+  // Descomente se quiser usar Multi-Zones no futuro
+  // async rewrites() {
+  //   return [
+  //     {
+  //       source: '/interview-external/:path*',
+  //       destination: 'http://localhost:3002/interview/:path*', // Desenvolvimento
+  //       // destination: 'https://interview.seudominio.com/interview/:path*', // Produção
+  //     },
+  //   ];
+  // },
 };
 
 export default nextConfig;

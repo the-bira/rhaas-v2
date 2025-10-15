@@ -15,12 +15,17 @@ interface AgentProps {
   name?: string;
   videoSrc?: string;
   className?: string;
+  isSpeaking?: boolean;
 }
 
-export function Agent({ type, name, videoSrc, className }: AgentProps) {
+export function Agent({
+  type,
+  name,
+  videoSrc,
+  className,
+  isSpeaking = false,
+}: AgentProps) {
   const isAI = type === "ai";
-
-  const isSpeaking = true;
 
   return (
     <Card

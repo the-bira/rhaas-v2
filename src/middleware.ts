@@ -10,6 +10,12 @@ export async function middleware(req: NextRequest) {
       return NextResponse.next();
     }
 
+    // Permitir acesso sem autenticação para /interview (candidatos)
+    // O rewrite para Multi-Zones é feito no next.config.ts
+    if (req.nextUrl.pathname.startsWith("/interview")) {
+      return NextResponse.next();
+    }
+
     const { isAuthenticated, getUser } = getKindeServerSession();
     const authed = await isAuthenticated();
 

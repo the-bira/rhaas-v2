@@ -1,32 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Agent } from "./Agent";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Mic, MicOff, PhoneOff } from "lucide-react";
 import { toast } from "sonner";
-import { startInterviewSessionAction } from "@/actions/candidate/startInterviewSessionAction";
-import { vapi } from "@/lib/vapi/vapi.sdk";
 
-// Debug: verificar se vapi está disponível
-console.log("🔧 Vapi SDK importado:", !!vapi);
+function sanitize(str?: string | null): string {
+  if (!str) return "";
+  return str
+    .replace(/[<>{}[\]()"'`;$]/g, "")
+    .slice(0, 1000)
+    .trim();
+}
 
 interface InterviewRoomProps {
   accessToken: string;
   jobTitle: string;
   candidateName: string;
   initialStatus: string;
-  initialSessionId: string | null;
   jobData?: {
     description?: string | null;
     requirements?: string | null;
     tags?: string[];
     interviewScriptJson?: unknown;
   };
-  candidateData?: {
-    email?: string | null;
-  };
+  candidateData?: { email?: string | null };
 }
 
 export function InterviewRoom({
@@ -34,185 +34,314 @@ export function InterviewRoom({
   jobTitle,
   candidateName,
   initialStatus,
-  initialSessionId,
-  jobData,
-  candidateData,
 }: InterviewRoomProps) {
-  const [status, setStatus] = useState<string>(initialStatus);
-  const [, setSessionId] = useState<string | null>(initialSessionId);
+  const [status, setStatus] = useState(initialStatus);
   const [isStarting, setIsStarting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [callActive, setCallActive] = useState(false);
 
-  // Debug: log dos dados recebidos
-  console.log("🎯 InterviewRoom props:", {
-    accessToken: accessToken ? "✅ Presente" : "❌ Ausente",
-    jobTitle,
-    candidateName,
-    initialStatus,
-    initialSessionId: initialSessionId ? "✅ Presente" : "❌ Ausente",
-  });
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const isAISpeaking = useRef(false); // ✅ Controla se IA está falando
+  const hasPlayedIntro = useRef(false);
+  const conversationHistory = useRef<string[]>([]);
+  const audioChunksRef = useRef<Blob[]>([]); // ✅ Acumula chunks enquanto usuário fala
+  const isSpeaking = useRef(false); // ✅ VAD: detecta se usuário está falando
+  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Não reconectar automaticamente - usuário deve clicar "Start Interview"
-  // useEffect(() => {
-  //   if (sessionId && initialStatus === "in_progress" && sessionId !== "null") {
-  //     console.log("🔄 Reconectando à sessão existente:", sessionId);
-  //     connectToVapi(sessionId);
-  //   }
-  // }, [sessionId, initialStatus]);
+  function cleanupInterview() {
+    console.log("🧹 Limpando recursos...");
+    if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
+      mediaRecorder.current.stop();
+      mediaRecorder.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current);
+    }
+    document.querySelectorAll("audio").forEach((a) => {
+      try {
+        a.pause();
+        a.src = "";
+        a.remove();
+      } catch {}
+    });
+    isAISpeaking.current = false;
+    isSpeaking.current = false;
+    audioChunksRef.current = [];
+  }
 
   async function handleStartInterview() {
     setIsStarting(true);
+    try {
+      await fetch("/api/interview/start", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ interviewId: accessToken }),
+      });
+
+      await playIntro();
+      await startMicLoop();
+
+      setCallActive(true);
+      setStatus("in_progress");
+      toast.success("Entrevista iniciada!");
+    } catch (err) {
+      console.error("❌ Erro ao iniciar:", err);
+      toast.error("Erro ao iniciar entrevista.");
+    } finally {
+      setIsStarting(false);
+    }
+  }
+
+  async function playIntro() {
+    if (hasPlayedIntro.current) return;
+    hasPlayedIntro.current = true;
+
+    const intro = sanitize(`
+      Olá, prazer em te conhecer!
+      Eu sou a entrevistadora virtual da Progressus TI.
+      Vou conduzir esta entrevista para entender melhor seu perfil.
+      Fique à vontade para responder naturalmente. Podemos começar?
+    `);
+
+    await speakText(intro);
+  }
+
+  // ✅ Função centralizada para IA falar
+  async function speakText(text: string) {
+    isAISpeaking.current = true;
 
     try {
-      const result = await startInterviewSessionAction(accessToken);
+      const res = await fetch("/api/interview/tts/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, voice: "alloy" }),
+      });
 
-      if (!result.success) {
-        toast.error(result.error);
-        setIsStarting(false);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          isAISpeaking.current = false; // ✅ IA terminou de falar
+        };
+
+        await audio.play();
+      }
+    } catch (err) {
+      console.error("❌ TTS falhou:", err);
+      isAISpeaking.current = false;
+    }
+  }
+
+  // ⭐️ CORREÇÃO: Não concatena - envia chunk individual
+  const handleSendAudioChunk = async (blob: Blob, mimeType: string) => {
+    if (blob.size < 2000) return; // Ignora chunks muito pequenos
+
+    const extension = mimeType.includes("ogg") ? "ogg" : "webm";
+    const formData = new FormData();
+    formData.append("file", blob, `audio.${extension}`);
+
+    try {
+      console.log("⬆️ Enviando chunk:", blob.size, "bytes");
+
+      const sttRes = await fetch("/api/interview/stt/stream", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!sttRes.ok) {
+        console.warn("⚠️ STT falhou");
         return;
       }
 
-      setSessionId(result.sessionId);
-      setStatus("in_progress");
-      toast.success(result.message);
+      const { text } = await sttRes.json();
+      if (!text || text.trim().length < 2) return;
 
-      // Conectar ao Vapi
-      await connectToVapi(result.sessionId);
-    } catch (error) {
-      console.error("Erro ao iniciar entrevista:", error);
-      toast.error("Erro ao iniciar entrevista. Tente novamente.");
-      setIsStarting(false);
-    }
-  }
+      console.log("🗣️ Candidato disse:", text);
+      conversationHistory.current.push(`Candidato: ${text}`);
 
-  async function connectToVapi(sessionId: string) {
-    try {
-      console.log("🔗 Conectando ao Vapi com sessionId:", sessionId);
-      console.log(
-        "🔑 Vapi token disponível:",
-        !!process.env.NEXT_PUBLIC_VAPI_WEB_TOKEN
-      );
-      console.log("🔧 Vapi instance:", !!vapi);
-      console.log(
-        "🔧 Vapi assistantId:",
-        process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID
-      );
+      // Resposta da IA
+      const llmRes = await fetch("/api/interview/llm/respond", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transcript: text,
+          context: {
+            jobTitle,
+            candidateName,
+            history: conversationHistory.current.slice(-6),
+          },
+        }),
+      });
 
-      // Verificar se vapi está disponível
-      if (!vapi) {
-        throw new Error("Vapi SDK não foi inicializado corretamente");
+      const reader = llmRes.body?.getReader();
+      const decoder = new TextDecoder();
+      let aiResponse = "";
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          aiResponse += decoder.decode(value, { stream: true });
+        }
       }
 
-      // Log para debug
-      console.log("🎯 Iniciando entrevista com:", {
-        candidateName,
-        jobTitle,
-        sessionId,
-      });
+      if (!aiResponse.trim()) return;
 
-      // Diagnóstico
-      console.log(
-        "🧠 Tipo do sessionId:",
-        typeof sessionId,
-        "valor:",
-        sessionId
-      );
-      console.log("🧱 vapi.start existe:", typeof vapi.start === "function");
+      console.log("�� IA respondeu:", aiResponse);
+      conversationHistory.current.push(`IA: ${aiResponse}`);
 
-      // Listener de erro global
-      vapi.on("error", (err) => {
-        console.error("🚨 Erro global Vapi:", err);
-        console.error("🚨 Detalhes do erro:", JSON.stringify(err, null, 2));
-      });
-
-      // Iniciar chamada Vapi com assistantId correto
-      const assistantId =
-        process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID ||
-        "3900d262-ea58-4d12-ae5a-06090b4485b6";
-
-      // Usar dados das props
-      console.log("🔍 Usando dados das props:", { jobData, candidateData });
-
-      const context = {
-        job: {
-          title: jobTitle,
-          description: jobData?.description || "",
-          requirements: jobData?.requirements || "",
-          tags: jobData?.tags || [],
-        },
-        candidate: {
-          name: candidateName,
-          email: candidateData?.email || "",
-        },
-        script: jobData?.interviewScriptJson || {},
-      };
-
-      await vapi.start(assistantId, {
-        variableValues: {
-          context: JSON.stringify(context),
-          candidateName,
-          jobTitle,
-          sessionId,
-        },
-      });
-
-      // Listeners de eventos
-      vapi.on("call-start", () => {
-        console.log("📞 Chamada iniciada");
-        setCallActive(true);
-        setIsStarting(false);
-      });
-
-      vapi.on("call-end", () => {
-        console.log("📞 Chamada finalizada");
-        setCallActive(false);
-        setStatus("completed");
-        toast.success("Entrevista finalizada! Obrigado pela participação.");
-      });
-
-      vapi.on("error", (error: unknown) => {
-        console.error("❌ Erro na chamada:", error);
-        toast.error("Erro durante a entrevista");
-        setCallActive(false);
-        setIsStarting(false);
-      });
-
-      vapi.on("speech-start", () => {
-        console.log("🎤 IA começou a falar");
-      });
-
-      vapi.on("speech-end", () => {
-        console.log("🎤 IA parou de falar");
-      });
-    } catch (error) {
-      console.error("Erro ao conectar Vapi:", error);
-      toast.error("Erro ao conectar com o sistema de entrevista");
-      setIsStarting(false);
+      await speakText(aiResponse);
+    } catch (err) {
+      console.error("❌ Erro no envio:", err);
     }
+  };
+
+  async function startMicLoop() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    streamRef.current = stream;
+
+    let mimeType = "audio/webm;codecs=opus";
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = "audio/ogg;codecs=opus";
+    }
+    console.log("🎙️ Gravando em:", mimeType);
+
+    const recorder = new MediaRecorder(stream, { mimeType });
+    mediaRecorder.current = recorder;
+
+    // ✅ VAD: Detecta quando usuário está falando
+    const audioContext = new AudioContext();
+    const source = audioContext.createMediaStreamSource(stream);
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 2048;
+    source.connect(analyser);
+
+    const dataArray = new Float32Array(analyser.fftSize);
+    const SILENCE_THRESHOLD = 0.01; // Ajustável
+    const SILENCE_DURATION = 1500; // 1.5s de silêncio = fim da fala
+
+    // Monitora volume do áudio
+    const checkVoiceActivity = () => {
+      analyser.getFloatTimeDomainData(dataArray);
+      const rms = Math.sqrt(
+        dataArray.reduce((acc, val) => acc + val * val, 0) / dataArray.length
+      );
+
+      const isSilent = rms < SILENCE_THRESHOLD;
+
+      if (!isSilent && !isSpeaking.current) {
+        // Começou a falar
+        console.log("🎤 Usuário começou a falar");
+        isSpeaking.current = true;
+        audioChunksRef.current = []; // Reset buffer
+
+        if (silenceTimeoutRef.current) {
+          clearTimeout(silenceTimeoutRef.current);
+        }
+      } else if (isSilent && isSpeaking.current) {
+        // Silêncio detectado - aguarda tempo antes de processar
+        if (silenceTimeoutRef.current) {
+          clearTimeout(silenceTimeoutRef.current);
+        }
+
+        silenceTimeoutRef.current = setTimeout(() => {
+          console.log("🔇 Usuário parou de falar - processando...");
+          isSpeaking.current = false;
+          processAccumulatedAudio(mimeType);
+        }, SILENCE_DURATION);
+      }
+    };
+
+    const vadInterval = setInterval(checkVoiceActivity, 100);
+
+    // Envia chunks individuais (cada um é um webm válido)
+    recorder.ondataavailable = async (event) => {
+      if (isAISpeaking.current) return; // Não captura áudio da IA
+      if (!event.data || event.data.size === 0) return;
+
+      // Se usuário está falando, acumula
+      if (isSpeaking.current) {
+        audioChunksRef.current.push(event.data);
+      }
+    };
+
+    recorder.start(2000); // 2s chunks - maior = mais áudio por chunk válido
+
+    // Limpeza
+    const cleanup = () => {
+      clearInterval(vadInterval);
+      recorder.stop();
+      audioContext.close();
+    };
+
+    window.addEventListener("beforeunload", cleanup);
   }
 
-  function handleEndCall() {
-    if (window.confirm("Tem certeza que deseja encerrar a entrevista?")) {
-      vapi.stop();
-      setCallActive(false);
-      setStatus("completed");
-    }
+  // ✅ Processa áudio acumulado quando usuário para de falar
+  async function processAccumulatedAudio(mimeType: string) {
+    if (audioChunksRef.current.length === 0) return;
+
+    // ⭐️ Pega todos os chunks acumulados
+    const chunks = [...audioChunksRef.current];
+    audioChunksRef.current = []; // Limpa buffer
+
+    // Filtra chunks válidos (> 5KB)
+    const validChunks = chunks.filter((chunk) => chunk.size >= 5000);
+
+    if (validChunks.length === 0) return;
+
+    // Envia o maior chunk (provavelmente tem mais fala)
+    const largestChunk = validChunks.reduce((largest, current) =>
+      current.size > largest.size ? current : largest
+    );
+
+    console.log(
+      `📦 Processando maior chunk: ${largestChunk.size} bytes de ${chunks.length} chunks`
+    );
+    await handleSendAudioChunk(largestChunk, mimeType);
+  }
+
+  // REMOVEMOS AS FUNÇÕES DE WAV (concatenateChunks, createWavBlob, writeString, blobToBase64)
+  // pois a solução ideal é WebM/Opus.
+
+  async function handleEndInterview() {
+    cleanupInterview();
+    setStatus("completed");
+    setCallActive(false);
+    toast.success("Entrevista encerrada.");
+
+    await fetch("/api/interview/end", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accessToken }),
+    });
   }
 
   function handleToggleMute() {
-    if (isMuted) {
-      vapi.setMuted(false);
-      setIsMuted(false);
-      toast.success("Microfone ativado");
-    } else {
-      vapi.setMuted(true);
-      setIsMuted(true);
-      toast.info("Microfone desativado");
-    }
+    const stream = streamRef.current;
+    if (!stream) return;
+    stream.getAudioTracks().forEach((t) => (t.enabled = isMuted));
+    setIsMuted(!isMuted);
+    toast.info(isMuted ? "Microfone ativado" : "Microfone desativado");
   }
 
-  // Status já completado
+  useEffect(() => {
+    return () => {
+      cleanupInterview();
+    };
+  }, []);
+
+  const safeJobTitle = sanitize(jobTitle);
+  const safeCandidateName = sanitize(candidateName);
+
   if (status === "completed") {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
@@ -220,110 +349,62 @@ export function InterviewRoom({
           <div className="text-6xl">✅</div>
           <h1 className="text-2xl font-bold">Entrevista Concluída!</h1>
           <p className="text-muted-foreground max-w-md">
-            Obrigado por participar da entrevista comportamental para a vaga de{" "}
-            <strong>{jobTitle}</strong>.
+            Obrigado por participar da entrevista para a vaga de{" "}
+            <strong>{safeJobTitle}</strong>.
           </p>
           <p className="text-sm text-muted-foreground">
-            Nossa equipe está analisando sua entrevista e entraremos em contato
-            em breve.
+            Nossa equipe analisará sua entrevista em breve.
           </p>
         </div>
       </div>
     );
   }
-
-  // Status cancelado
-  if (status === "cancelled") {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <div className="text-center space-y-4">
-          <div className="text-6xl">❌</div>
-          <h1 className="text-2xl font-bold">Entrevista Cancelada</h1>
-          <p className="text-muted-foreground max-w-md">
-            Esta entrevista foi cancelada. Entre em contato com o recrutador
-            para mais informações.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  console.log("🎨 Renderizando InterviewRoom com status:", status);
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">{jobTitle}</h1>
+        <h1 className="text-2xl font-bold">{safeJobTitle}</h1>
         <Badge className="py-1 px-4 bg-primary/50 text-foreground rounded-sm">
           Entrevista Comportamental
         </Badge>
       </div>
 
-      {/* Botão Iniciar (se ainda não iniciou) */}
-      {!callActive && status === "scheduled" && (
+      {!callActive && ["scheduled", "error"].includes(status) && (
         <div className="flex flex-col items-center justify-center min-h-[50vh] gap-6 bg-muted/30 rounded-lg p-8">
-          <div className="text-center space-y-4 max-w-2xl">
-            <h2 className="text-3xl font-bold">Bem-vindo, {candidateName}!</h2>
-            <p className="text-lg text-muted-foreground">
-              Você está prestes a iniciar sua entrevista comportamental.
-            </p>
-            <div className="bg-background border rounded-lg p-6 text-left space-y-3">
-              <h3 className="font-semibold">📋 Instruções:</h3>
-              <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
-                <li>A entrevista durará aproximadamente 15 minutos</li>
-                <li>
-                  Fale naturalmente, como se estivesse conversando com um
-                  recrutador
-                </li>
-                <li>
-                  Cite exemplos concretos e situações reais que você viveu
-                </li>
-                <li>Seja honesto e autêntico em suas respostas</li>
-                <li>Certifique-se de que seu microfone está funcionando</li>
-              </ul>
-            </div>
-            <Button
-              size="lg"
-              onClick={handleStartInterview}
-              disabled={isStarting}
-              className="gap-2 text-lg px-8 py-6"
-            >
-              {isStarting ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Iniciando entrevista...
-                </>
-              ) : (
-                <>
-                  <Mic className="w-5 h-5" />
-                  Iniciar Entrevista
-                </>
-              )}
-            </Button>
-          </div>
+          <h2 className="text-3xl font-bold">
+            Bem-vindo, {safeCandidateName}!
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            Clique no botão abaixo para iniciar sua entrevista.
+          </p>
+          <Button
+            size="lg"
+            onClick={handleStartInterview}
+            disabled={isStarting}
+            className="gap-2 text-lg px-8 py-6"
+          >
+            {isStarting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Iniciando...
+              </>
+            ) : (
+              <>
+                <Mic className="w-5 h-5" />
+                Iniciar Entrevista
+              </>
+            )}
+          </Button>
         </div>
       )}
 
-      {/* Sala de Entrevista (quando iniciada) */}
       {(callActive || isStarting || status === "in_progress") && (
         <>
           <div className="relative flex flex-col md:flex-row gap-4 w-full min-h-[60vh] md:min-h-[70vh]">
-            <Agent type="user" name={candidateName} />
+            <Agent type="user" name={safeCandidateName} />
             <Agent type="ai" />
           </div>
 
-          {/* Botão Reconectar (se status in_progress mas não conectado) */}
-          {status === "in_progress" && !callActive && !isStarting && (
-            <div className="flex justify-center mb-4">
-              <Button onClick={() => connectToVapi("")} className="gap-2">
-                <Mic className="w-4 h-4" />
-                Reconectar à Entrevista
-              </Button>
-            </div>
-          )}
-
-          {/* Controles */}
           <div className="flex items-center justify-center gap-4 mt-4">
             <Button
               variant={isMuted ? "destructive" : "outline"}
@@ -347,11 +428,11 @@ export function InterviewRoom({
             <Button
               variant="destructive"
               size="lg"
-              onClick={handleEndCall}
+              onClick={handleEndInterview}
               className="gap-2"
             >
               <PhoneOff className="w-5 h-5" />
-              Encerrar Entrevista
+              Encerrar
             </Button>
           </div>
         </>
@@ -359,4 +440,3 @@ export function InterviewRoom({
     </div>
   );
 }
-

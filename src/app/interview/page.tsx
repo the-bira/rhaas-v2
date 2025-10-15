@@ -1,4 +1,4 @@
-import { InterviewRoom } from "@/components/interview/InterviewRoom";
+import { InterviewRoomRealtime } from "@/components/interview/InterviewRoomRealtime";
 import { getInterviewForCandidateAction } from "@/actions/candidate/startInterviewSessionAction";
 import { redirect } from "next/navigation";
 
@@ -18,7 +18,7 @@ export default async function InterviewPage({
 
   // Buscar dados da entrevista usando token de acesso
   const result = await getInterviewForCandidateAction(accessToken);
-  
+
   console.log("🔍 Resultado da busca da entrevista:", result);
 
   if (!result.success) {
@@ -40,14 +40,11 @@ export default async function InterviewPage({
   }
 
   return (
-    <InterviewRoom
+    <InterviewRoomRealtime
       accessToken={accessToken}
       jobTitle={result.interview.jobTitle}
       candidateName={result.interview.candidateName || "Candidato"}
       initialStatus={result.interview.status}
-      initialSessionId={result.interview.vapiSessionId}
-      jobData={result.interview.jobData}
-      candidateData={result.interview.candidateData}
     />
   );
 }
